@@ -252,6 +252,8 @@
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai">เบอร์โทร</th>
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai">เลขบัตร/ประกันสังคม</th>
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai">โรค/แพ้ยา</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai">หมอ</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai">ห้อง</th>
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai">สถานะ</th>
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai">หมายเหตุ</th>
                                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-thai min-w-[320px]">การดำเนินการ</th>
@@ -268,6 +270,42 @@
             </div>
         </main>
     </div>
+
+    <!-- Modal for Adding Doctor Info -->
+    <div id="doctorInfoModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-[100]">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md font-thai">
+            <h3 class="text-xl font-bold mb-4">เพิ่มข้อมูลหมอและห้อง</h3>
+            <form id="doctorInfoForm">
+                <input type="hidden" id="appointmentId" />
+                <input type="hidden" id="appointmentDate" />
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">เลือกหมอ</label>
+                    <select id="doctorSelect" required class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="">-- เลือกหมอ --</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">เลือกห้อง</label>
+                    <select id="roomSelect" required class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="">-- เลือกห้อง --</option>
+                        <option value="ห้อง 1">ห้อง 1</option>
+                        <option value="ห้อง 2">ห้อง 2</option>
+                        <option value="ห้อง 3">ห้อง 3</option>
+                        <option value="ห้อง 4">ห้อง 4</option>
+                        <option value="ห้อง 5">ห้อง 5</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-3 justify-end">
+                    <button type="button" id="cancelDoctorInfoBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded">ยกเลิก</button>
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="Config.js"></script>
     <script>
    // (A) เมื่อ DOM โหลดเสร็จ ให้แสดงชื่อผู้ดูแลจาก localStorage
@@ -528,6 +566,7 @@
                 <button class="actionBtn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-thai" data-action="completeBooking" data-id="${item.idKey}" ${['ยกเลิก','เสร็จสิ้น'].includes(item.status) || item.status === 'รอการยืนยัน' ? 'disabled' : ''}>เสร็จสิ้น</button>
                 <button class="actionBtn bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs font-thai" data-action="sendReminder" data-id="${item.idKey}" ${item.status === 'ยกเลิก' || item.status === 'เสร็จสิ้น' ? 'disabled' : ''}>แจ้งยืนยัน</button> 
                 <button class="actionBtn bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs font-thai" data-action="sendReminderWithoutPayment" data-id="${item.idKey}" ${item.status === 'ยกเลิก' || item.status === 'เสร็จสิ้น' ? 'disabled' : ''}>แจ้งเตือน</button>
+                <button class="actionBtn bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs font-thai" data-action="addDoctorInfo" data-id="${item.idKey}" data-date="${item.date}">เพิ่มข้อมูล</button>
             `;
 
             if (type === 'card') {
@@ -542,6 +581,8 @@
                         <p><strong>เลขบัตร/ประกันสังคม:</strong> ${item.idCardOrSocial || '-'}</p>
                         <p><strong>โรค/แพ้ยา:</strong> ${item.diseaseAllergy || '-'}</p>
                         <p class="truncate" title="${item.note || '-'}"><strong>หมายเหตุ:</strong> ${item.note || '-'}</p>
+                        <p><strong>หมอ:</strong> ${item.doctor || '-'}</p>
+                        <p><strong>ห้อง:</strong> ${item.room || '-'}</p>
                         <p><strong>สถานะ:</strong> ${item.status}</p>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
@@ -555,6 +596,8 @@
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-thai">${item.phonenumber}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-thai">${item.idCardOrSocial || '-'}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-thai">${item.diseaseAllergy || '-'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-thai">${item.doctor || '-'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-thai">${item.room || '-'}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-thai">${item.status}</td>
                     <td class="px-4 py-3 text-sm text-gray-500 font-thai max-w-xs truncate" title="${item.note || '-'}">${item.note || '-'}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
@@ -616,6 +659,14 @@
                     if (btn.disabled) return;
                     const action = btn.dataset.action;
                     const id = btn.dataset.id;
+                    
+                    // Handle addDoctorInfo action separately
+                    if (action === 'addDoctorInfo') {
+                        const date = btn.dataset.date;
+                        openDoctorInfoModal(id, date);
+                        return;
+                    }
+                    
                     const actionTextMap = {
                         confirmBooking: 'ยืนยันการนัดหมาย',
                         cancelBooking: 'ยกเลิกการนัดหมาย',
@@ -724,6 +775,72 @@
                 document.body.removeChild(link);
             }
         }
+
+        // ========== ฟังก์ชันสำหรับจัดการ Modal ข้อมูลหมอ ==========
+        const doctorInfoModal = document.getElementById('doctorInfoModal');
+        const cancelDoctorInfoBtn = document.getElementById('cancelDoctorInfoBtn');
+        const doctorInfoForm = document.getElementById('doctorInfoForm');
+        const doctorSelect = document.getElementById('doctorSelect');
+
+        cancelDoctorInfoBtn.addEventListener('click', () => {
+            doctorInfoModal.classList.add('hidden');
+            doctorInfoModal.classList.remove('flex');
+        });
+
+        async function openDoctorInfoModal(appointmentId, appointmentDate) {
+            document.getElementById('appointmentId').value = appointmentId;
+            document.getElementById('appointmentDate').value = appointmentDate;
+            
+            // ดึงรายชื่อหมอจากวันที่นั้นๆ
+            showLoading();
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getDoctorsByDate&date=${appointmentDate}`);
+                const doctors = await response.json();
+                
+                doctorSelect.innerHTML = '<option value="">-- เลือกหมอ --</option>';
+                doctors.forEach(doctor => {
+                    const option = document.createElement('option');
+                    option.value = doctor;
+                    option.textContent = doctor;
+                    doctorSelect.appendChild(option);
+                });
+                
+                hideLoading();
+                doctorInfoModal.classList.remove('hidden');
+                doctorInfoModal.classList.add('flex');
+            } catch (error) {
+                hideLoading();
+                showAlert('โหลดข้อมูลหมอล้มเหลว: ' + error.message, null, null, false);
+            }
+        }
+
+        doctorInfoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoading();
+
+            const formData = new FormData();
+            formData.append('action', 'updateAppointmentDoctor');
+            formData.append('id', document.getElementById('appointmentId').value);
+            formData.append('doctor', doctorSelect.value);
+            formData.append('room', document.getElementById('roomSelect').value);
+
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.text();
+                hideLoading();
+                showAlert(result, null, null, false);
+                doctorInfoModal.classList.add('hidden');
+                doctorInfoModal.classList.remove('flex');
+                fetchInitialData(); // รีโหลดข้อมูล
+            } catch (error) {
+                hideLoading();
+                showAlert('เกิดข้อผิดพลาด: ' + error.message, null, null, false);
+            }
+        });
     </script>
 </body>
 
