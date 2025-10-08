@@ -383,6 +383,41 @@
     </div>
   </div>
 
+  <!-- Modal for Adding Doctor Info -->
+  <div id="doctorInfoModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-[100]">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+      <h3 class="text-xl font-bold mb-4">เพิ่มข้อมูลหมอและห้อง</h3>
+      <form id="doctorInfoForm">
+        <input type="hidden" id="appointmentId" />
+        <input type="hidden" id="appointmentDate" />
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">เลือกหมอ</label>
+          <select id="doctorSelect" required class="w-full border border-gray-300 rounded px-3 py-2">
+            <option value="">-- เลือกหมอ --</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">เลือกห้อง</label>
+          <select id="roomSelect" required class="w-full border border-gray-300 rounded px-3 py-2">
+            <option value="">-- เลือกห้อง --</option>
+            <option value="ห้อง 1">ห้อง 1</option>
+            <option value="ห้อง 2">ห้อง 2</option>
+            <option value="ห้อง 3">ห้อง 3</option>
+            <option value="ห้อง 4">ห้อง 4</option>
+            <option value="ห้อง 5">ห้อง 5</option>
+          </select>
+        </div>
+
+        <div class="flex gap-3 justify-end">
+          <button type="button" id="cancelDoctorInfoBtn" class="btn btn-secondary">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <main class="max-w-4xl w-full mx-auto p-4 sm:p-6">
     <h1 class="text-2xl font-bold mb-6 text-center">หน้าจัดการนัดหมาย (Admin)</h1>
 
@@ -605,6 +640,7 @@
                 <button type="button" class="action-btn btn btn-accent btn-sm" data-action="confirmBooking" data-id="${item.idKey}" ${pendingStatus ? '' : 'disabled'}>ยืนยัน</button>
                 <button type="button" class="action-btn btn btn-danger btn-sm" data-action="cancelBooking" data-id="${item.idKey}" ${finalStatus ? 'disabled' : ''}>ยกเลิก</button>
                 <button type="button" class="action-btn btn btn-primary btn-sm" data-action="completeBooking" data-id="${item.idKey}" ${finalStatus ? 'disabled' : ''}>เสร็จสิ้น</button>
+                <button type="button" class="action-btn btn btn-sm" style="background: #9333ea; color: white;" data-action="addDoctorInfo" data-id="${item.idKey}" data-date="${date}">เพิ่มข้อมูล</button>
               </div>
             </div>
           </td>
@@ -620,7 +656,14 @@
         btn.onclick = () => {
           const action = btn.dataset.action;
           const id = btn.dataset.id;
-          confirmAction(`คุณต้องการดำเนินการ "${action}" หรือไม่?`, action, id);
+          
+          // ถ้าเป็น action addDoctorInfo ให้เปิด modal
+          if (action === 'addDoctorInfo') {
+            const date = btn.dataset.date;
+            openDoctorInfoModal(id, date);
+          } else {
+            confirmAction(`คุณต้องการดำเนินการ "${action}" หรือไม่?`, action, id);
+          }
         };
       });
     }
@@ -699,7 +742,93 @@
         document.getElementById(id).addEventListener('change', loadData);
       });
       loadData();
+      setupDoctorInfoModal();
     });
+
+    // ========== ฟังก์ชันสำหรับจัดการ Modal ข้อมูลหมอ ==========
+    function setupDoctorInfoModal() {
+      const doctorInfoModal = document.getElementById('doctorInfoModal');
+      const cancelDoctorInfoBtn = document.getElementById('cancelDoctorInfoBtn');
+      const doctorInfoForm = document.getElementById('doctorInfoForm');
+      const doctorSelect = document.getElementById('doctorSelect');
+
+      cancelDoctorInfoBtn.addEventListener('click', () => {
+        doctorInfoModal.classList.add('hidden');
+        doctorInfoModal.classList.remove('flex');
+      });
+
+      doctorInfoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showLoading();
+
+        const formData = new FormData();
+        formData.append('action', 'updateAppointmentDoctor');
+        formData.append('id', document.getElementById('appointmentId').value);
+        formData.append('doctor', doctorSelect.value);
+        formData.append('room', document.getElementById('roomSelect').value);
+
+        try {
+          const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.text();
+          hideLoading();
+          alertMessage.textContent = result;
+          overlay.classList.replace('invisible', 'flex');
+          btnOk.style.display = 'inline-block';
+          btnCancel.style.display = 'none';
+          btnOk.onclick = () => {
+            overlay.classList.replace('flex', 'invisible');
+            doctorInfoModal.classList.add('hidden');
+            doctorInfoModal.classList.remove('flex');
+            loadData(); // รีโหลดข้อมูล
+          };
+        } catch (error) {
+          hideLoading();
+          alertMessage.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+          overlay.classList.replace('invisible', 'flex');
+          btnOk.style.display = 'inline-block';
+          btnCancel.style.display = 'none';
+          btnOk.onclick = () => overlay.classList.replace('flex', 'invisible');
+        }
+      });
+    }
+
+    async function openDoctorInfoModal(appointmentId, appointmentDate) {
+      const doctorInfoModal = document.getElementById('doctorInfoModal');
+      const doctorSelect = document.getElementById('doctorSelect');
+      
+      document.getElementById('appointmentId').value = appointmentId;
+      document.getElementById('appointmentDate').value = appointmentDate;
+      
+      // ดึงรายชื่อหมอจากวันที่นั้นๆ
+      showLoading();
+      try {
+        const response = await fetch(`${WEB_APP_URL}?action=getDoctorsByDate&date=${appointmentDate}`);
+        const doctors = await response.json();
+        
+        doctorSelect.innerHTML = '<option value="">-- เลือกหมอ --</option>';
+        doctors.forEach(doctor => {
+          const option = document.createElement('option');
+          option.value = doctor;
+          option.textContent = doctor;
+          doctorSelect.appendChild(option);
+        });
+        
+        hideLoading();
+        doctorInfoModal.classList.remove('hidden');
+        doctorInfoModal.classList.add('flex');
+      } catch (error) {
+        hideLoading();
+        alertMessage.textContent = 'โหลดข้อมูลหมอล้มเหลว: ' + error.message;
+        overlay.classList.replace('invisible', 'flex');
+        btnOk.style.display = 'inline-block';
+        btnCancel.style.display = 'none';
+        btnOk.onclick = () => overlay.classList.replace('flex', 'invisible');
+      }
+    }
   </script>
 </body>
 
