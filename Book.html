@@ -768,7 +768,7 @@
     <script src="Config.js"></script>
 
     <script>
-        const ENABLE_LIFF = true; // เปลี่ยนเป็น true เพื่อเปิดใช้งาน LIFF
+        const ENABLE_LIFF = false; // เปลี่ยนเป็น true เพื่อเปิดใช้งาน LIFF
         const $ = (id) => document.getElementById(id);
 
         const defaultLang = 'th';
@@ -1676,11 +1676,11 @@
             showLoading(true);
             const fd = new FormData($('bookingForm'));
             fd.append('date', selectedDate);
-            // ส่งข้อมูลใหม่
+            // ส่งข้อมูลใหม่ - ใช้ || '' เพื่อให้แน่ใจว่าส่งค่าว่างแทน undefined
             fd.append('first_name', $('first_name').value.trim());
             fd.append('last_name', $('last_name').value.trim());
             fd.append('id_card_or_social', $('id_card_or_social').value.trim());
-            fd.append('disease_allergy', $('disease_allergy').value.trim());
+            fd.append('disease_allergy', $('disease_allergy').value.trim() || '');
             try {
                 const resp = await fetch(WEB_APP_URL, { method: 'POST', body: fd });
                 const text = await resp.text();
@@ -1746,7 +1746,7 @@
                             text: label + ':',
                             color: varToHex('--text-placeholder'),
                             size: 'sm',
-                            flex: 2,
+                            flex: 3,
                             align: 'start'
                         },
                         {
