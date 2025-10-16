@@ -1185,7 +1185,7 @@
                 inline: true,
                 locale: customLocale,
                 dateFormat: 'Y-m-d',
-                minDate: 'today',
+                minDate: 'tomorrow',
                 disable: [(d) => {
                     const k = formatDate(d);
                     const isPermanentHoliday = (window.permanentHolidayDays || []).includes(d.getDay());
