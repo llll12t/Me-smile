@@ -384,10 +384,6 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 184, 176, 0.35);
         }
-        
-        #serviceCards .service-card.selected .service-name {
-            color: #fff;
-        }
 
         .service-card .checkmark {
             position: absolute;
@@ -631,7 +627,7 @@
                     <option value="th">ไทย</option>
                     <option value="en">English</option>
                     <option value="my">မြန်မာ</option>
-                    <option value="km">ខ្មែร</option>
+                    <option value="km">ខ្មែរ</option>
                 </select>
                 <img src="https://llll12t.github.io/Me-smile/me%20smile.jpg" alt="Logo" class="w-10 h-10 object-contain rounded-md" />
             </div>
@@ -772,7 +768,7 @@
     <script src="Config.js"></script>
 
     <script>
-        const ENABLE_LIFF = true;
+        const ENABLE_LIFF = true; // เปลี่ยนเป็น true เพื่อเปิดใช้งาน LIFF
         const $ = (id) => document.getElementById(id);
 
         const defaultLang = 'th';
@@ -782,7 +778,10 @@
         let currentVisibleStep = 'step1';
         let flatpickrInstance = null;
         let servicesLoaded = false;
-        
+        // Cache for services data to avoid re-fetching
+        let cachedServicesData = null;
+        // Cache for translated service names
+        const translationCache = new Map();
         const historyState = {
             records: [],
             filtered: [],
@@ -792,104 +791,6 @@
             loading: false
         };
         let historyFirstLoadPending = true;
-        
-        // --- START: OPTIMIZED CODE ---
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            showLoading(true);
-            $(currentVisibleStep).classList.add('step-active');
-            $(currentVisibleStep).classList.remove('hidden');
-
-            const savedLang = localStorage.getItem('booking_lang') || navigator.language.split('-')[0];
-            $('languageSwitcher').value = translations[savedLang] ? savedLang : defaultLang;
-            
-            $('languageSwitcher').addEventListener('change', async (e) => {
-                await setLanguage(e.target.value);
-            });
-
-            await setLanguage($('languageSwitcher').value);
-
-            if (ENABLE_LIFF) {
-                 try {
-                    await initLiff();
-                } catch (e) {
-                    console.error("LIFF init failed, running offline.", e);
-                    offlineProfile();
-                }
-            } else {
-                offlineProfile();
-            }
-            
-            try {
-                // Fetch all initial data in one go
-                const res = await fetch(`${WEB_APP_URL}?action=getInitialData`);
-                if (!res.ok) throw new Error('Failed to load initial data');
-                
-                const data = await res.json();
-                
-                // Populate UI with initial data
-                renderServices(data.services || []);
-                window.holidayDates = data.holidays || [];
-                window.permanentHolidayDays = data.permanentHolidays || [];
-                
-                // Fetch availability for the current month
-                await fetchMonthAvailability(new Date().getFullYear(), new Date().getMonth() + 1);
-
-            } catch (err) {
-                console.error("Error fetching initial data:", err);
-                showPopup('popup.serviceError'); // Use a generic error message
-            }
-
-            if (!flatpickrInstance) {
-                await preloadFlatpickrLocales();
-                initCalendar();
-            }
-
-            showLoading(false);
-            $('appContainer').style.opacity = 1;
-        });
-
-        function renderServices(services) {
-            const container = $('serviceCards');
-            container.innerHTML = '';
-            if (!services.length) {
-                container.innerHTML = `<p class="text-center col-span-2">${t('service.noService')}</p>`;
-                servicesLoaded = true;
-                return;
-            }
-            
-            services.forEach((s, index) => {
-                const c = document.createElement('div');
-                c.className = 'service-card p-4 border-element rounded-lg cursor-pointer shadow-sm';
-                c.dataset.id = s.id;
-                c.dataset.name = s.name;
-                c.dataset.originalName = normalizeServiceKey(s.name || '');
-                c.dataset.price = s.price;
-                const translatedName = translateServiceName(c.dataset.originalName, currentLang);
-                
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'font-bold text-md mb-1 service-name';
-                nameDiv.textContent = translatedName;
-                
-                const checkmarkDiv = document.createElement('div');
-                checkmarkDiv.className = 'checkmark';
-                checkmarkDiv.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"></polyline></svg>`;
-                
-                c.appendChild(nameDiv);
-                c.appendChild(checkmarkDiv);
-                
-                c.onclick = () => {
-                    [...container.children].forEach(card => card.classList.remove('selected'));
-                    c.classList.add('selected');
-                    updateSelectedServices();
-                };
-                container.appendChild(c);
-            });
-            servicesLoaded = true;
-        }
-
-        // --- END: OPTIMIZED CODE ---
-
 
         const t = (key) => {
             if (translations[currentLang] && key in translations[currentLang]) {
@@ -901,9 +802,10 @@
             return key;
         };
 
-        const translationCache = new Map();
+        // ฟังก์ชันแปลชื่อบริการ (เข้มแข็ง: trim/normalize และลองหลาย fallback)
         function normalizeServiceKey(name) {
             if (!name && name !== 0) return '';
+            // trim whitespace and normalize multiple spaces
             return String(name).replace(/\s+/g, ' ').trim();
         }
 
@@ -911,13 +813,18 @@
             const orig = normalizeServiceKey(serviceName);
             if (!orig) return serviceName || '';
 
+            // Check cache first
             const cacheKey = `${lang}:${orig}`;
             if (translationCache.has(cacheKey)) {
                 return translationCache.get(cacheKey);
             }
 
-            const tryKeys = [`service.${orig}`, `service.${orig.replace(/\s+/g, '')}`];
+            const tryKeys = [
+                `service.${orig}`,
+                `service.${orig.replace(/\s+/g, '')}` // fallback without spaces
+            ];
 
+            // Try current language first
             for (const k of tryKeys) {
                 const v = translations[lang]?.[k];
                 if (v) {
@@ -926,6 +833,7 @@
                 }
             }
 
+            // Fallback to default language
             if (lang !== defaultLang) {
                 for (const k of tryKeys) {
                     const v = translations[defaultLang]?.[k];
@@ -936,10 +844,12 @@
                 }
             }
 
+            // Store original as fallback
             translationCache.set(cacheKey, orig);
             return orig;
         }
         
+        // ฟังก์ชันอัปเดตภาษาของบริการ
         function updateServiceLanguage(lang, targetContainer = null) {
             const serviceCards = targetContainer || $('#serviceCards');
             if (!serviceCards) return;
@@ -947,17 +857,23 @@
             [...serviceCards.children].forEach(card => {
                 const originalName = normalizeServiceKey(card.dataset.originalName || card.dataset.name || '');
                 const translatedName = translateServiceName(originalName, lang);
+                // ใช้ class selector ใหม่ที่ชัดเจนกว่า
                 const nameDiv = card.querySelector('.service-name');
                 if (nameDiv) {
                     nameDiv.textContent = translatedName;
+                    console.log('Updated service:', originalName, '→', translatedName);
                 }
             });
         }
 
+        // Pre-load all flatpickr locales at once
         const flatpickrLocalesLoaded = {};
+        
         function loadFlatpickrLocale(lang) {
             return new Promise((resolve) => {
                 if (lang === 'en' || lang === 'my') return resolve();
+                
+                // Check if already loaded
                 if (flatpickrLocalesLoaded[lang]) return resolve();
 
                 const script = document.createElement('script');
@@ -968,23 +884,28 @@
                     resolve();
                 };
                 script.onerror = () => {
-                    flatpickrLocalesLoaded[lang] = true; 
+                    console.error(`Failed to load Flatpickr locale for ${lang}`);
+                    flatpickrLocalesLoaded[lang] = true; // Mark as attempted
                     resolve();
                 };
                 document.head.appendChild(script);
             });
         }
         
+        // Pre-load all locales at startup
         async function preloadFlatpickrLocales() {
             const locales = ['th', 'km'];
             await Promise.allSettled(locales.map(lang => loadFlatpickrLocale(lang)));
         }
 
         async function setLanguage(lang) {
+            console.log('setLanguage called with:', lang);
             currentLang = translations[lang] ? lang : defaultLang;
+            console.log('currentLang set to:', currentLang);
             localStorage.setItem('booking_lang', currentLang);
             document.documentElement.lang = currentLang;
 
+            // สร้างฟังก์ชัน t แบบ local สำหรับภาษาใหม่
             const tLocal = (key) => {
                 if (translations[currentLang] && key in translations[currentLang]) {
                     return translations[currentLang][key];
@@ -995,6 +916,7 @@
                 return key;
             };
 
+            // Optimize: Update all translatable elements in one pass
             document.querySelectorAll('[data-translate-key], [data-translate-key-placeholder], [data-tkey], [data-tkey-placeholder]').forEach(el => {
                 if (el.hasAttribute('data-translate-key')) {
                     el.textContent = tLocal(el.dataset.translateKey);
@@ -1010,8 +932,10 @@
                 }
             });
 
+            // อัปเดตข้อความทักทาย
             $('greetingPrefix').textContent = tLocal(getGreeting(new Date().getHours()));
 
+            // Update Flatpickr locale without destroying
             if (flatpickrInstance) {
                 const localeMap = {
                     th: window.flatpickr?.l10ns?.th,
@@ -1034,8 +958,15 @@
                 }
             }
             
-            updateServiceLanguage(currentLang);
+            // รีโหลดบริการทั้งหมดเมื่อเปลี่ยนภาษา (วิธีเดิม)
+            try {
+                console.log('setLanguage: reloading services for language:', currentLang);
+                await fetchServiceData(true); // force refresh
+            } catch (e) {
+                console.warn('setLanguage: fetchServiceData failed', e);
+            }
             
+            // อัปเดตข้อมูลใน step4 ถ้าอยู่ในหน้านั้น
             if (currentVisibleStep === 'step4') {
                 updateConfirmation();
             }
@@ -1059,12 +990,14 @@
             }
         }
 
+        // inline service-loading UI (spinner inside serviceCards) and control disabling
         function setServiceLoading(on) {
             const container = $('serviceCards');
             const nextBtn = $('nextToStep2');
             const langSwitch = $('languageSwitcher');
             if (!container) return;
             if (on) {
+                // show enhanced loading state with spinner and text
                 container.innerHTML = `
                     <div class="col-span-2 flex flex-col items-center justify-center py-8">
                         <div class="flex items-center mb-3">
@@ -1082,6 +1015,7 @@
                     langSwitch.style.opacity = '0.6';
                 }
             } else {
+                // re-enable controls; content will be refreshed by fetchServiceData
                 if (nextBtn) {
                     nextBtn.disabled = false;
                     nextBtn.classList.remove('btn-loading');
@@ -1146,21 +1080,25 @@
         }
 
         async function initLiff() {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) return liff.login();
-            const p = await liff.getProfile();
-            $('greetingName').textContent = p.displayName;
-            if (p.pictureUrl) $('greetingAvatar').src = p.pictureUrl;
-            else $('greetingAvatar').style.display = 'none';
-            $('userlineid').value = p.userId;
-            setHistoryUserId(p.userId);
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) return liff.login();
+                const p = await liff.getProfile();
+                $('greetingName').textContent = p.displayName;
+                if (p.pictureUrl) $('greetingAvatar').src = p.pictureUrl;
+                else $('greetingAvatar').style.display = 'none';
+                $('userlineid').value = p.userId;
+                setHistoryUserId(p.userId);
+            } catch {
+                offlineProfile();
+            }
         }
 
         function offlineProfile() {
-            $('greetingName').textContent = 'ผู้ใช้งาน';
+            $('greetingName').textContent = 'ผู้ใช้งานทดสอบ';
             $('greetingAvatar').style.display = 'none';
-            $('userlineid').value = 'OFFLINE_USER';
-            setHistoryUserId('OFFLINE_USER');
+            $('userlineid').value = 'OFFLINE';
+            setHistoryUserId('OFFLINE');
         }
 
         async function fetchMonthAvailability(year, month) {
@@ -1173,7 +1111,109 @@
                 showPopup('popup.calendarError');
             }
         }
-        
+
+        async function fetchServiceData(forceRefresh = false) {
+            // Use cached data if available
+            if (cachedServicesData && !forceRefresh) {
+                renderServices(cachedServicesData);
+                return;
+            }
+
+            // show inline loading in the services area and disable related controls
+            setServiceLoading(true);
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=fetchServices`);
+                if (!res.ok) throw new Error();
+                const services = await res.json();
+                
+                // Cache the services data
+                cachedServicesData = services;
+                renderServices(services);
+            } catch (err) {
+                console.error('fetchServiceData error', err);
+                //showPopup('popup.serviceError');
+            } finally {
+                // hide inline loading and re-enable controls
+                setServiceLoading(false);
+            }
+        }
+
+        function renderServices(services) {
+            const container = $('serviceCards');
+            if (!services.length) {
+                container.innerHTML = `<p class="text-center col-span-2">${t('service.noService')}</p>`;
+                servicesLoaded = true;
+                return;
+            }
+            
+            container.innerHTML = '';
+            services.forEach((s, index) => {
+                const c = document.createElement('div');
+                c.className = 'service-card p-8 border-element rounded-lg cursor-pointer shadow-sm';
+                c.dataset.id = s.id;
+                c.dataset.name = s.name;
+                c.dataset.originalName = normalizeServiceKey(s.name || '');
+                c.dataset.price = s.price;
+                const translatedName = translateServiceName(c.dataset.originalName, currentLang);
+                
+                // สร้าง elements แยกเพื่อให้สามารถอัปเดตได้
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'font-bold text-md mb-1 text-primary-light service-name';
+                nameDiv.textContent = translatedName;
+                
+                const checkmarkDiv = document.createElement('div');
+                checkmarkDiv.className = 'checkmark';
+                checkmarkDiv.innerHTML = `
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                `;
+                
+                c.appendChild(nameDiv);
+                c.appendChild(checkmarkDiv);
+                
+                c.onclick = () => {
+                    // จำกัดให้เลือกได้แค่บริการเดียว - ยกเลิกการเลือกอื่นทั้งหมด
+                    const allCards = [...container.children];
+                    allCards.forEach(card => card.classList.remove('selected'));
+                    
+                    // เลือกบริการปัจจุบัน
+                    c.classList.add('selected');
+                    
+                    // Add haptic feedback simulation
+                    c.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        c.style.transform = '';
+                    }, 150);
+                    updateSelectedServices();
+                };
+                // Staggered animation for smooth appearance
+                c.style.opacity = '0';
+                c.style.transform = 'translateY(20px)';
+                container.appendChild(c);
+                setTimeout(() => {
+                    c.style.opacity = '1';
+                    c.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+            
+            servicesLoaded = true;
+        }
+
+        async function fetchHolidayDates() {
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=checkAvailability&getHolidays=true`);
+                if (!res.ok) throw new Error();
+                const j = await res.json();
+                // รับค่าทั้งวันหยุดพิเศษ และวันหยุดประจำสัปดาห์
+                window.holidayDates = Array.isArray(j.holidays) ? j.holidays : [];
+                window.permanentHolidayDays = Array.isArray(j.permanentHolidays) ? j.permanentHolidays : [];
+            } catch {
+                window.holidayDates = [];
+                window.permanentHolidayDays = [];
+            }
+        }
+
         function formatDate(d) {
             const y = d.getFullYear();
             const m = ('0' + (d.getMonth() + 1)).slice(-2);
@@ -1190,8 +1230,8 @@
             };
             const baseLocale = localeMap[currentLang] || window.flatpickr.l10ns.default;
             const customLocale = {
-                ...(baseLocale || {}),
-                firstDayOfWeek: 0
+                ...(baseLocale || {}), // คัดลอกค่าภาษาที่เลือกมาทั้งหมด
+                firstDayOfWeek: 0 // กำหนดให้วันอาทิตย์ (0) เป็นวันแรก
             };
             flatpickrInstance = flatpickr('#inlineCalendar', {
                 inline: true,
@@ -1210,6 +1250,7 @@
                     const isPermanentHoliday = (window.permanentHolidayDays || []).includes(date.getDay());
                     if (isSpecialHoliday || isPermanentHoliday) {
                         dayElem.classList.add('holiday-day');
+                        // Show only the date number (remove extra text)
                         dayElem.innerHTML = `<span>${date.getDate()}</span>`;
                     }
                 },
@@ -1245,6 +1286,7 @@
             const td = $('timeDropdown');
             td.innerHTML = '';
             
+            // กรองเฉพาะช่วงเวลาที่ยังว่าง
             const availableTimes = Object.entries(avail).filter(([_, i]) => i.remaining > 0);
             
             if (!availableTimes.length) {
@@ -1268,12 +1310,34 @@
         }
 
         function updateSelectedServices() {
-            const sel = [...$('serviceCards').children].filter((c) => c.classList.contains('selected'));
+            const serviceCardsEl = $('serviceCards');
+            if (!serviceCardsEl) return;
+            const sel = [...serviceCardsEl.children].filter((c) => c.classList.contains('selected'));
             $('selectedServices').value = JSON.stringify(sel.map((c) => c.dataset.id));
             $('selectedServiceNames').value = sel.map((c) => translateServiceName(normalizeServiceKey(c.dataset.originalName || c.dataset.name || ''), currentLang)).join(', ');
+            
+            // Update button state based on selection
+            const nextBtn = $('nextToStep2');
+            if (nextBtn) {
+                if (sel.length > 0) {
+                    nextBtn.classList.remove('opacity-50');
+                    nextBtn.style.background = 'var(--primary)';
+                } else {
+                    nextBtn.classList.add('opacity-50');
+                }
+            }
+            
+            // Add subtle visual feedback for selection count
+            if (sel.length > 0) {
+                serviceCardsEl.style.transform = 'scale(1.01)';
+                setTimeout(() => {
+                    serviceCardsEl.style.transform = 'scale(1)';
+                }, 200);
+            }
         }
 
         function updateConfirmation() {
+            // ดึงชื่อบริการที่เลือกและแปลให้ตรงกับภาษาปัจจุบัน
             const selectedCards = [...$('serviceCards').children].filter(c => c.classList.contains('selected'));
             const translatedServiceNames = selectedCards.map(c => translateServiceName(c.dataset.originalName || c.dataset.name, currentLang));
             const raw = translatedServiceNames.join(', ') || '-';
@@ -1419,6 +1483,7 @@
                 historyFirstLoadPending = false;
                 applyHistoryFilters();
             } catch (err) {
+                console.error('History load error:', err);
                 historyState.records = [];
                 historyState.filtered = [];
                 historyState.loaded = false;
@@ -1563,6 +1628,7 @@
                     showCustomAlert(t('history.success'), null, { confirmText: t('popup.close') });
                     await loadHistoryData(true);
                 } catch (err) {
+                    console.error('History action error:', err);
                     showCustomAlert(t('history.error'), null, { confirmText: t('popup.close') });
                 } finally {
                     showLoading(false);
@@ -1610,6 +1676,7 @@
             showLoading(true);
             const fd = new FormData($('bookingForm'));
             fd.append('date', selectedDate);
+            // ส่งข้อมูลใหม่ - ใช้ || '' เพื่อให้แน่ใจว่าส่งค่าว่างแทน undefined
             fd.append('first_name', $('first_name').value.trim());
             fd.append('last_name', $('last_name').value.trim());
             fd.append('id_card_or_social', $('id_card_or_social').value.trim());
@@ -1625,6 +1692,7 @@
                 }
                 if (!result.success) throw new Error(result.message || t('popup.submitError'));
             } catch (err) {
+                console.error('Submit error:', err);
                 return showPopup(err.message || t('popup.submitError'), false, true);
             }
             showLoading(false);
@@ -1640,12 +1708,20 @@
         };
 
         async function sendFlexMessage() {
-            if (!window.liff || typeof liff.isInClient !== 'function' || !liff.isInClient()) {
+            if (!window.liff || typeof liff.isInClient !== 'function') {
+                console.warn('LIFF SDK not loaded or not initialized');
+                alert('Flex message: LIFF SDK not loaded.');
+                return;
+            }
+            if (!liff.isInClient()) {
+                console.warn('Not in LINE client, cannot send flex message');
+                alert('Flex message can only be sent inside LINE app.');
                 return;
             }
             const servicesRaw = $('selectedServiceNames').value || '';
             const servicesList = servicesRaw.split(', ').filter(s => s.trim().length);
 
+            // Service list: left-aligned (unchanged)
             const serviceContents = servicesList.map(s => ({
                 type: 'box',
                 layout: 'horizontal',
@@ -1659,6 +1735,7 @@
                 serviceContents.push({ type: 'text', text: '-', size: 'sm', color: varToHex('--text-main2'), align: 'start' });
             }
 
+            // All other fields: value right-aligned
             function makeFieldBox(label, value) {
                 return {
                     type: 'box',
@@ -1728,12 +1805,46 @@
                 await liff.sendMessages([{ type: 'flex', altText: t('flex.altText'), contents: bubble }]);
             } catch (e) {
                 console.error('Error sending flex message:', e);
+                alert('ส่ง Flex message ไม่สำเร็จ: ' + (e.message || e));
             }
         }
 
         function varToHex(name) {
             return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
         }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            showLoading(true);
+            $(currentVisibleStep).classList.add('step-active');
+            $(currentVisibleStep).classList.remove('hidden');
+
+            const savedLang = localStorage.getItem('booking_lang') || navigator.language.split('-')[0];
+            $('languageSwitcher').value = translations[savedLang] ? savedLang : defaultLang;
+            
+            // แก้ไข event listener ให้ชัดเจน
+            $('languageSwitcher').addEventListener('change', async (e) => {
+                console.log('Language changed to:', e.target.value);
+                await setLanguage(e.target.value);
+                console.log('Language change completed');
+            });
+
+            await setLanguage($('languageSwitcher').value);
+
+            if (ENABLE_LIFF) await initLiff(); else offlineProfile();
+
+            // Pre-load Flatpickr locales and fetch data in parallel
+            await Promise.allSettled([
+                preloadFlatpickrLocales(),
+                fetchHolidayDates(),
+                fetchMonthAvailability(new Date().getFullYear(), new Date().getMonth() + 1),
+                fetchServiceData(), // โหลดข้อมูลบริการ
+            ]);
+
+            if (!flatpickrInstance) initCalendar();
+
+            showLoading(false);
+            $('appContainer').style.opacity = 1;
+        });
     </script>
 </body>
 
