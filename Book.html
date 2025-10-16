@@ -778,10 +778,6 @@
         let currentVisibleStep = 'step1';
         let flatpickrInstance = null;
         let servicesLoaded = false;
-        // Cache for services data to avoid re-fetching
-        let cachedServicesData = null;
-        // Cache for translated service names
-        const translationCache = new Map();
         const historyState = {
             records: [],
             filtered: [],
@@ -813,12 +809,6 @@
             const orig = normalizeServiceKey(serviceName);
             if (!orig) return serviceName || '';
 
-            // Check cache first
-            const cacheKey = `${lang}:${orig}`;
-            if (translationCache.has(cacheKey)) {
-                return translationCache.get(cacheKey);
-            }
-
             const tryKeys = [
                 `service.${orig}`,
                 `service.${orig.replace(/\s+/g, '')}` // fallback without spaces
@@ -827,25 +817,17 @@
             // Try current language first
             for (const k of tryKeys) {
                 const v = translations[lang]?.[k];
-                if (v) {
-                    translationCache.set(cacheKey, v);
-                    return v;
-                }
+                if (v) return v;
             }
 
             // Fallback to default language
             if (lang !== defaultLang) {
                 for (const k of tryKeys) {
                     const v = translations[defaultLang]?.[k];
-                    if (v) {
-                        translationCache.set(cacheKey, v);
-                        return v;
-                    }
+                    if (v) return v;
                 }
             }
 
-            // Store original as fallback
-            translationCache.set(cacheKey, orig);
             return orig;
         }
         
@@ -866,36 +848,27 @@
             });
         }
 
-        // Pre-load all flatpickr locales at once
+        // Pre-load only Thai locale for flatpickr (most common)
         const flatpickrLocalesLoaded = {};
         
         function loadFlatpickrLocale(lang) {
             return new Promise((resolve) => {
-                if (lang === 'en' || lang === 'my') return resolve();
-                
-                // Check if already loaded
-                if (flatpickrLocalesLoaded[lang]) return resolve();
+                if (lang === 'en' || lang === 'my' || flatpickrLocalesLoaded[lang]) {
+                    return resolve();
+                }
 
                 const script = document.createElement('script');
-                script.id = `flatpickr-locale-${lang}`;
                 script.src = `https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/${lang}.js`;
                 script.onload = () => {
                     flatpickrLocalesLoaded[lang] = true;
                     resolve();
                 };
                 script.onerror = () => {
-                    console.error(`Failed to load Flatpickr locale for ${lang}`);
-                    flatpickrLocalesLoaded[lang] = true; // Mark as attempted
+                    flatpickrLocalesLoaded[lang] = true;
                     resolve();
                 };
                 document.head.appendChild(script);
             });
-        }
-        
-        // Pre-load all locales at startup
-        async function preloadFlatpickrLocales() {
-            const locales = ['th', 'km'];
-            await Promise.allSettled(locales.map(lang => loadFlatpickrLocale(lang)));
         }
 
         async function setLanguage(lang) {
@@ -1112,28 +1085,16 @@
             }
         }
 
-        async function fetchServiceData(forceRefresh = false) {
-            // Use cached data if available
-            if (cachedServicesData && !forceRefresh) {
-                renderServices(cachedServicesData);
-                return;
-            }
-
-            // show inline loading in the services area and disable related controls
+        async function fetchServiceData() {
             setServiceLoading(true);
             try {
                 const res = await fetch(`${WEB_APP_URL}?action=fetchServices`);
                 if (!res.ok) throw new Error();
                 const services = await res.json();
-                
-                // Cache the services data
-                cachedServicesData = services;
                 renderServices(services);
             } catch (err) {
                 console.error('fetchServiceData error', err);
-                //showPopup('popup.serviceError');
             } finally {
-                // hide inline loading and re-enable controls
                 setServiceLoading(false);
             }
         }
@@ -1179,22 +1140,9 @@
                     
                     // เลือกบริการปัจจุบัน
                     c.classList.add('selected');
-                    
-                    // Add haptic feedback simulation
-                    c.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        c.style.transform = '';
-                    }, 150);
                     updateSelectedServices();
                 };
-                // Staggered animation for smooth appearance
-                c.style.opacity = '0';
-                c.style.transform = 'translateY(20px)';
                 container.appendChild(c);
-                setTimeout(() => {
-                    c.style.opacity = '1';
-                    c.style.transform = 'translateY(0)';
-                }, index * 100);
             });
             
             servicesLoaded = true;
@@ -1819,25 +1767,21 @@
             $(currentVisibleStep).classList.remove('hidden');
 
             const savedLang = localStorage.getItem('booking_lang') || navigator.language.split('-')[0];
-            $('languageSwitcher').value = translations[savedLang] ? savedLang : defaultLang;
+            const lang = translations[savedLang] ? savedLang : defaultLang;
+            $('languageSwitcher').value = lang;
             
-            // แก้ไข event listener ให้ชัดเจน
             $('languageSwitcher').addEventListener('change', async (e) => {
-                console.log('Language changed to:', e.target.value);
                 await setLanguage(e.target.value);
-                console.log('Language change completed');
             });
 
-            await setLanguage($('languageSwitcher').value);
-
-            if (ENABLE_LIFF) await initLiff(); else offlineProfile();
-
-            // Pre-load Flatpickr locales and fetch data in parallel
-            await Promise.allSettled([
-                preloadFlatpickrLocales(),
+            // โหลดทุกอย่างพร้อมกันเพื่อความเร็ว
+            const [profile] = await Promise.allSettled([
+                ENABLE_LIFF ? initLiff() : Promise.resolve(offlineProfile()),
+                setLanguage(lang),
+                loadFlatpickrLocale('th'), // โหลดเฉพาะภาษาไทย
                 fetchHolidayDates(),
                 fetchMonthAvailability(new Date().getFullYear(), new Date().getMonth() + 1),
-                fetchServiceData(), // โหลดข้อมูลบริการ
+                fetchServiceData()
             ]);
 
             if (!flatpickrInstance) initCalendar();
