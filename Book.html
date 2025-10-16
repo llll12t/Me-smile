@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Booking</title>
+    <title>Me-smile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js" defer></script>
@@ -1188,6 +1188,14 @@
                 minDate: 'tomorrow',
                 disable: [(d) => {
                     const k = formatDate(d);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const checkDate = new Date(d);
+                    checkDate.setHours(0, 0, 0, 0);
+                    
+                    // ห้ามเลือกวันปัจจุบันหรือวันที่ผ่านมาแล้ว
+                    if (checkDate <= today) return true;
+                    
                     const isPermanentHoliday = (window.permanentHolidayDays || []).includes(d.getDay());
                     return isPermanentHoliday || (window.holidayDates || []).includes(k) || monthAvailability[k] === 'full';
                 }],
