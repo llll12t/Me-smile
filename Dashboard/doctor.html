@@ -196,20 +196,23 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">หมอ 1</label>
-                    <input type="text" id="doctor1" placeholder="ชื่อหมอ"
-                        class="w-full border border-gray-300 rounded px-3 py-2" />
+                    <select id="doctor1" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="">-- เลือกหมอ --</option>
+                    </select>
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">หมอ 2</label>
-                    <input type="text" id="doctor2" placeholder="ชื่อหมอ"
-                        class="w-full border border-gray-300 rounded px-3 py-2" />
+                    <select id="doctor2" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="">-- เลือกหมอ --</option>
+                    </select>
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">หมอ 3</label>
-                    <input type="text" id="doctor3" placeholder="ชื่อหมอ"
-                        class="w-full border border-gray-300 rounded px-3 py-2" />
+                    <select id="doctor3" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="">-- เลือกหมอ --</option>
+                    </select>
                 </div>
 
                 <div class="flex gap-3 justify-end">
@@ -232,6 +235,7 @@
 
             const adminName = localStorage.getItem('adminName') || 'Admin';
             document.getElementById('adminName').textContent = adminName;
+            loadDoctorNames(); // โหลดรายชื่อหมอจากชีต "ตั้งค่าทั่วไป"
             loadDoctorData();
         });
 
@@ -252,6 +256,8 @@
         const doctorForm = document.getElementById('doctorForm');
         const doctorTableBody = document.getElementById('doctorTableBody');
 
+        let doctorNamesList = []; // เก็บรายชื่อหมอที่ดึงมาจากชีต
+
         const showLoading = () => loadingOverlay.classList.remove('hidden');
         const hideLoading = () => loadingOverlay.classList.add('hidden');
 
@@ -265,10 +271,54 @@
             };
         }
 
+        // ฟังก์ชันโหลดรายชื่อหมอจากชีต "ตั้งค่าทั่วไป"
+        async function loadDoctorNames() {
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=fetchDoctorNames`);
+                const data = await response.json();
+                doctorNamesList = data;
+                
+                console.log('Loaded doctor names:', doctorNamesList);
+                
+                // เติมรายชื่อหมอใน dropdown ทั้ง 3 ช่อง
+                populateDoctorDropdowns();
+            } catch (error) {
+                console.error('Error loading doctor names:', error);
+                showAlert('ไม่สามารถโหลดรายชื่อหมอได้: ' + error.message);
+            }
+        }
+
+        // ฟังก์ชันเติมข้อมูลใน dropdown
+        function populateDoctorDropdowns() {
+            const dropdowns = ['doctor1', 'doctor2', 'doctor3'];
+            
+            dropdowns.forEach(dropdownId => {
+                const dropdown = document.getElementById(dropdownId);
+                const currentValue = dropdown.value; // เก็บค่าปัจจุบันไว้ก่อน
+                
+                // ล้างตัวเลือกเดิม (เหลือแค่ option แรก)
+                dropdown.innerHTML = '<option value="">-- เลือกหมอ --</option>';
+                
+                // เพิ่มรายชื่อหมอจากข้อมูลที่โหลดมา
+                doctorNamesList.forEach(doctorName => {
+                    const option = document.createElement('option');
+                    option.value = doctorName;
+                    option.textContent = doctorName;
+                    dropdown.appendChild(option);
+                });
+                
+                // คืนค่าเดิมถ้ามี
+                if (currentValue) {
+                    dropdown.value = currentValue;
+                }
+            });
+        }
+
         addDoctorBtn.addEventListener('click', () => {
             document.getElementById('modalTitle').textContent = 'เพิ่มข้อมูลหมอ';
             doctorForm.reset();
             document.getElementById('doctorId').value = '';
+            populateDoctorDropdowns(); // รีเฟรช dropdown
             doctorModal.classList.remove('hidden');
             doctorModal.classList.add('flex');
         });
