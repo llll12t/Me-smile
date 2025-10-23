@@ -1,4 +1,15 @@
-const SPREADSHEET_ID = '1qd0wmvutF8kdKlz4xJ4jqMvPGvx6ySmvwYMFF3y6O1I';
+// Utility: เลือกชื่อชีตตามสาขา
+function getSheetNameByBranch(baseName, branch) {
+  // กรณีสาขาหลัก (1) ใช้ชื่อเดิม
+  if (!branch || branch === 'main' || branch === '1') {
+    return baseName;
+  }
+  
+  // กรณีสาขาอื่นๆ (2, 3, ...) ให้เพิ่มหมายเลขสาขาต่อท้าย
+  // รูปแบบ: ชื่อชีตเดิม_สาขา2, ชื่อชีตเดิม_สาขา3
+  return `${baseName}_สาขา${branch}`;
+}
+const SPREADSHEET_ID = '1DzQaGJRZNcv0I_ieFmdd9_-ltngtm9Fo2f7SwqQ3igQ';
 const SHEET_NAME_MEMBER = 'รายชื่อสมาชิก';
 const SHEET_NAME_SERVICE = 'บริการ';
 const SHEET_NAME_SETTING = 'ตั้งค่าทั่วไป';
@@ -8,6 +19,7 @@ const DRIVE_FOLDER_ID = '1biuregFoPubQgbLb5_wi6iQzkiJUajuW'; // ตรวจส�
 // --- Web Entry Point ---
 function doGet(e) {
   const action = e.parameter.action;
+  const branch = e.parameter.branch || '1';
 
   // =========================
   // 1) กรณี adminLogin (เช็ก username/password)
@@ -23,11 +35,13 @@ function doGet(e) {
     return ContentService
       .createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
-  } if (action === 'fetchData') return fetchServiceData();                // บริการ
-  if (action === 'fetchTimeSlots') return fetchTimeSlots();             // ตั้งค่า - ช่วงเวลา
-  if (action === 'fetchHolidays') return fetchHolidays();               // ตั้งค่า - วันหยุด
-  if (action === 'fetchMemberData') return fetchMembers();              // สมาชิก
-  if (action === 'fetchGeneralSettings') return fetchGeneralSettings();
+  }
+  if (action === 'fetchData') return fetchServiceData(branch);                // บริการ
+  if (action === 'fetchTimeSlots') return fetchTimeSlots(branch);             // ตั้งค่า - ช่วงเวลา
+  if (action === 'fetchHolidays') return fetchHolidays(branch);               // ตั้งค่า - วันหยุด
+  if (action === 'fetchMemberData') return fetchMembers(branch);              // สมาชิก
+  if (action === 'fetchGeneralSettings') return fetchGeneralSettings(branch);
+  if (action === 'fetchDoctors') return fetchDoctors(branch);                 // รายชื่อหมอ
 
   // เพิ่มการจัดการข้อผิดพลาดสำหรับ action ที่ไม่รู้จัก
   return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Unknown action' }))
@@ -41,18 +55,22 @@ function doPost(e) {
 
     // สมาชิก
     if (req.action === 'insertOrUpdateMember') msg = insertOrUpdateMember(req.data);
-    else if (req.action === 'deleteMember') msg = deleteMember(req.id);
+    else if (req.action === 'deleteMember') msg = deleteMember(req.id, req.branch);
 
     // บริการ
     else if (req.action === 'insertOrUpdateService') msg = insertOrUpdateService(req.data); // <-- ตรงนี้ที่แก้ไข
-    else if (req.action === 'deleteService') msg = deleteService(req.id);
+    else if (req.action === 'deleteService') msg = deleteService(req.id, req.branch);
 
     // ตั้งค่าทั่วไป
     else if (req.action === 'insertOrUpdateTimeSlot') msg = insertOrUpdateTimeSlot(req.data);
-    else if (req.action === 'deleteTimeSlot') msg = deleteTimeSlot(req.id);
-    else if (req.action === 'addHoliday') msg = addHoliday(req.date);
-    else if (req.action === 'deleteHoliday') msg = deleteHoliday(req.date);
-    else if (req.action === 'updatePermanentHolidays') msg = updatePermanentHolidays(req.data);
+    else if (req.action === 'deleteTimeSlot') msg = deleteTimeSlot(req.id, req.branch);
+    else if (req.action === 'addHoliday') msg = addHoliday(req.date, req.branch);
+    else if (req.action === 'deleteHoliday') msg = deleteHoliday(req.date, req.branch);
+    else if (req.action === 'updatePermanentHolidays') msg = updatePermanentHolidays(req.data, req.branch);
+
+    // รายชื่อหมอ
+    else if (req.action === 'insertOrUpdateDoctor') msg = insertOrUpdateDoctor(req.data);
+    else if (req.action === 'deleteDoctor') msg = deleteDoctor(req.id, req.branch);
 
     else throw new Error('Unknown action');
 
@@ -68,25 +86,49 @@ function doPost(e) {
 }
 
 // === สมาชิก ===
-function fetchMembers() {
-  const sheet = getOrCreateSheet(SHEET_NAME_MEMBER, ['ไอดี', 'UserID', 'ชื่อ', 'เลขที่บัตรประชาชน', 'เลขที่ประกันสังคม', 'เบอร์โทร', 'Timestamp']);
+function fetchMembers(branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_MEMBER, branch);
+  // ปรับหัวตารางใหม่: ['รหัส', 'ไลน์ไอดี', 'ชื่อ', 'นามสกุล', 'เบอร์โทร', 'เลขบัตร/ประกัน', 'โรค/แพ้', 'หมายเหตุ', 'เวลาบันทึก']
+  const sheet = getOrCreateSheet(sheetName, ['รหัส', 'ไลน์ไอดี', 'ชื่อ', 'นามสกุล', 'เบอร์โทร', 'เลขบัตร/ประกัน', 'โรค/แพ้', 'หมายเหตุ', 'เวลาบันทึก']);
   const values = sheet.getDataRange().getDisplayValues();
   const headers = values.shift();
-  return ContentService.createTextOutput(JSON.stringify(values.map(r => headers.reduce((o, h, i) => (o[h] = r[i], o), {}))))
+  // Map to object with key ภาษาไทย
+  return ContentService.createTextOutput(JSON.stringify(values.map(r => ({
+    'รหัส': r[0],
+    'ไลน์ไอดี': r[1],
+    'ชื่อ': r[2],
+    'นามสกุล': r[3],
+    'เบอร์โทร': r[4],
+    'เลขบัตร/ประกัน': r[5],
+    'โรค/แพ้': r[6],
+    'หมายเหตุ': r[7],
+    'เวลาบันทึก': r[8]
+  }))))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
 function insertOrUpdateMember(data) {
-  const sheet = getOrCreateSheet(SHEET_NAME_MEMBER, ['ไอดี', 'UserID', 'ชื่อ', 'เลขที่บัตรประชาชน', 'เลขที่ประกันสังคม', 'เบอร์โทร', 'Timestamp']);
+  const branch = data.branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_MEMBER, branch);
+  // ปรับหัวตารางใหม่: ['รหัส', 'UserID', 'ชื่อ', 'นามสกุล', 'เบอร์โทร', 'เลขบัตร/ประกัน', 'โรค/แพ้', 'หมายเหตุ', 'เวลาบันทึก']
+  const sheet = getOrCreateSheet(sheetName, ['รหัส', 'UserID', 'ชื่อ', 'นามสกุล', 'เบอร์โทร', 'เลขบัตร/ประกัน', 'โรค/แพ้', 'หมายเหตุ', 'เวลาบันทึก']);
   const values = sheet.getDataRange().getValues();
   const now = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd HH:mm:ss');
 
-  if (!data['ชื่อ'] || !data['เบอร์โทร']) throw new Error('ต้องระบุชื่อและเบอร์โทร');
+  // Map key อังกฤษ → ไทย ถ้ายังไม่มี key ภาษาไทย
+  if (!data['ชื่อ'] && data['firstName']) data['ชื่อ'] = data['firstName'];
+  if (!data['นามสกุล'] && data['lastName']) data['นามสกุล'] = data['lastName'];
+  if (!data['เลขบัตร/ประกัน'] && data['idCardOrSocial']) data['เลขบัตร/ประกัน'] = data['idCardOrSocial'];
+  if (!data['โรค/แพ้'] && data['diseaseAllergy']) data['โรค/แพ้'] = data['diseaseAllergy'];
+  if (!data['หมายเหตุ'] && data['note']) data['หมายเหตุ'] = data['note'];
+
+  if (!data['ชื่อ'] || !data['นามสกุล'] || !data['เบอร์โทร']) throw new Error('ต้องระบุชื่อ นามสกุล และเบอร์โทร');
 
   let found = false;
   for (let i = 1; i < values.length; i++) { // เริ่มจาก 1 เพื่อข้าม header
-    if (String(values[i][0]) === String(data['ไอดี'])) { // เปรียบเทียบ ID เป็น String
-      sheet.getRange(i + 1, 2, 1, 4).setValues([[data['UserID'] || '', data['ชื่อ'], data['เบอร์โทร'], data['เลขที่บัตรประชาชน'] || '', data['เลขที่ประกันสังคม'] || '', now]]);
+    if (String(values[i][0]) === String(data['รหัส'])) { // เปรียบเทียบ ID เป็น String
+      sheet.getRange(i + 1, 2, 1, 8).setValues([[data['UserID'] || '', data['ชื่อ'], data['นามสกุล'], data['เบอร์โทร'], data['เลขบัตร/ประกัน'] || '', data['โรค/แพ้'] || '', data['หมายเหตุ'] || '', now]]);
       found = true;
       break;
     }
@@ -94,14 +136,16 @@ function insertOrUpdateMember(data) {
 
   if (!found) {
     const newId = String(sheet.getLastRow() + 1);
-    sheet.appendRow([newId, data['UserID'] || '', data['ชื่อ'], data['เบอร์โทร'], data['เลขที่บัตรประชาชน'] || '', data['เลขที่ประกันสังคม'] || '', now]);
+    sheet.appendRow([newId, data['UserID'] || '', data['ชื่อ'], data['นามสกุล'], data['เบอร์โทร'], data['เลขบัตร/ประกัน'] || '', data['โรค/แพ้'] || '', data['หมายเหตุ'] || '', now]);
     return { success: true, message: 'เพิ่มข้อมูลสมาชิกใหม่เรียบร้อย', id: newId };
   }
-  return { success: true, message: 'อัปเดตข้อมูลสมาชิกเรียบร้อย', id: data['ไอดี'] };
+  return { success: true, message: 'อัปเดตข้อมูลสมาชิกเรียบร้อย', id: data['รหัส'] };
 }
 
-function deleteMember(id) {
-  const sheet = getOrCreateSheet(SHEET_NAME_MEMBER);
+function deleteMember(id, branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_MEMBER, branch);
+  const sheet = getOrCreateSheet(sheetName);
   const values = sheet.getDataRange().getValues();
   for (let i = values.length - 1; i >= 1; i--) { // เริ่มจาก 1 เพื่อข้าม header
     if (String(values[i][0]) === String(id)) { // เปรียบเทียบ ID เป็น String
@@ -113,8 +157,10 @@ function deleteMember(id) {
 }
 
 // === บริการ ===
-function fetchServiceData() {
-  const sheet = getOrCreateSheet(SHEET_NAME_SERVICE, ['ไอดี', 'รายการ', 'รายละเอียด', 'ราคา', 'รูปภาพ']);
+function fetchServiceData(branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SERVICE, branch);
+  const sheet = getOrCreateSheet(sheetName, ['ไอดี', 'รายการ', 'รายละเอียด', 'ราคา', 'รูปภาพ']);
   const values = sheet.getDataRange().getDisplayValues(); // ใช้ getDisplayValues() เพื่อให้ได้ค่าตามที่แสดงในชีท (รวมถึง URL รูปภาพ)
   const headers = values.length > 0 ? values.shift() : []; // ตรวจสอบว่ามีข้อมูลก่อน shift headers
 
@@ -138,7 +184,9 @@ function fetchServiceData() {
 }
 
 function insertOrUpdateService(data) {
-  const sheet = getOrCreateSheet(SHEET_NAME_SERVICE, ['ไอดี', 'รายการ', 'รายละเอียด', 'ราคา', 'รูปภาพ']);
+  const branch = data.branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SERVICE, branch);
+  const sheet = getOrCreateSheet(sheetName, ['ไอดี', 'รายการ', 'รายละเอียด', 'ราคา', 'รูปภาพ']);
   const values = sheet.getDataRange().getValues(); // ใช้ getValues() เพื่อให้ได้ค่าดิบ (เช่น ID เป็นตัวเลข)
 
   let id = data['ไอดี']; // นี่คือ ID ที่ส่งมาจากฟอร์ม (อาจเป็นค่าว่างสำหรับรายการใหม่ หรือ ID เดิมสำหรับการอัปเดต)
@@ -174,12 +222,14 @@ function insertOrUpdateService(data) {
   }
   // ถ้าไม่มีการอัปโหลดใหม่ และมีรูปภาพเก่า ก็จะใช้ค่าจาก data['รูปภาพOLD'] ที่ตั้งไว้แต่แรก
 
-  // 4. เตรียมข้อมูลสำหรับบันทึก
+  // 4. เตรียมข้อมูลสำหรับบันทึก (ราคาเป็น 0 ถ้าไม่มีข้อมูลหรือไม่ใช่ตัวเลข)
+  let price = parseFloat(data['ราคา']);
+  if (isNaN(price)) price = 0;
   const rowData = [
     String(id), // ID ต้องเป็น String เพื่อความสอดคล้อง
     data['รายการ'] || '',
     data['รายละเอียด'] || '',
-    parseFloat(data['ราคา']) || 0, // แปลงราคาเป็นตัวเลข
+    price,
     imageUrl
   ];
 
@@ -199,8 +249,10 @@ function insertOrUpdateService(data) {
   }
 }
 
-function deleteService(id) {
-  const sheet = getOrCreateSheet(SHEET_NAME_SERVICE);
+function deleteService(id, branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SERVICE, branch);
+  const sheet = getOrCreateSheet(sheetName);
   const values = sheet.getDataRange().getValues();
   for (let i = values.length - 1; i >= 1; i--) { // เริ่มจาก 1 เพื่อข้าม header
     if (String(values[i][0]) === String(id)) { // เปรียบเทียบ ID เป็น String
@@ -212,8 +264,10 @@ function deleteService(id) {
 }
 
 // === ตั้งค่าทั่วไป ===
-function fetchTimeSlots() {
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด']);
+function fetchTimeSlots(branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด']);
   const values = sheet.getDataRange().getDisplayValues();
   const headers = values.shift();
   // Filter out rows that are not valid time slots (e.g., just holiday entries)
@@ -229,7 +283,9 @@ function fetchTimeSlots() {
 
 
 function insertOrUpdateTimeSlot(data) {
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด']);
+  const branch = data.branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด']);
   const values = sheet.getDataRange().getValues();
   let id = data['ไอดี'];
   let isUpdate = false;
@@ -273,8 +329,10 @@ function insertOrUpdateTimeSlot(data) {
 }
 
 
-function deleteTimeSlot(id) {
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING);
+function deleteTimeSlot(id, branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName);
   const values = sheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][0]) === String(id)) {
@@ -287,8 +345,10 @@ function deleteTimeSlot(id) {
 }
 
 
-function fetchHolidays() {
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING);
+function fetchHolidays(branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName);
   const values = sheet.getDataRange().getDisplayValues();
   values.shift(); // Remove header row
   // Filter out empty values and return only non-empty holiday dates
@@ -297,10 +357,12 @@ function fetchHolidays() {
 }
 
 
-function addHoliday(dateStr) {
+function addHoliday(dateStr, branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
   const [yyyy, mm, dd] = dateStr.split('-');
   const formatted = `${dd}-${mm}-${yyyy}`; // Format to DD-MM-YYYY
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING);
+  const sheet = getOrCreateSheet(sheetName);
   const values = sheet.getDataRange().getValues();
 
   // Check if holiday already exists
@@ -323,8 +385,10 @@ function addHoliday(dateStr) {
 }
 
 
-function deleteHoliday(dateStr) {
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING);
+function deleteHoliday(dateStr, branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName);
   const values = sheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
     if (values[i][3] === dateStr) {
@@ -339,8 +403,10 @@ function deleteHoliday(dateStr) {
 // === ฟังก์ชันสำหรับจัดการวันหยุดประจำ (เพิ่มใหม่) ===
 
 // ฟังก์ชันสำหรับอ่านค่าวันหยุดประจำจากชีต
-function fetchGeneralSettings() {
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด', 'วันหยุดประจำสัปดาห์ (0-6)']);
+function fetchGeneralSettings(branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด', 'วันหยุดประจำสัปดาห์ (0-6)', 'รายชื่อหมอ']);
   // อ่านค่าจากเซลล์ E2 (แถว 2, คอลัมน์ 5)
   const permanentHolidays = sheet.getRange(2, 5).getValue();
   return ContentService.createTextOutput(JSON.stringify({ permanentHolidays: permanentHolidays }))
@@ -348,15 +414,102 @@ function fetchGeneralSettings() {
 }
 
 // ฟังก์ชันสำหรับบันทึก/อัปเดตค่าวันหยุดประจำ
-function updatePermanentHolidays(days) {
+function updatePermanentHolidays(days, branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
   if (!Array.isArray(days)) {
     return { success: false, message: 'ข้อมูลไม่ถูกต้อง' };
   }
-  const sheet = getOrCreateSheet(SHEET_NAME_SETTING);
+  const sheet = getOrCreateSheet(sheetName);
   // แปลง Array ['6', '0'] เป็น String "6,0" แล้วบันทึกลงเซลล์ E2
   const valueToSave = days.join(',');
   sheet.getRange(2, 5).setValue(valueToSave);
   return { success: true, message: 'บันทึกการตั้งค่าวันหยุดประจำเรียบร้อย' };
+}
+
+// === รายชื่อหมอ ===
+function fetchDoctors(branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด', 'วันหยุดประจำสัปดาห์ (0-6)', 'รายชื่อหมอ']);
+  const values = sheet.getDataRange().getDisplayValues();
+  const headers = values.shift();
+  // Filter out rows that have doctor names (column F - index 5)
+  const doctors = values.map(r => ({
+    'ไอดี': r[0] || '',
+    'รายชื่อหมอ': r[5] || ''
+  })).filter(item => item['รายชื่อหมอ'] !== ''); // Only return rows with doctor names
+
+  return ContentService.createTextOutput(JSON.stringify(doctors))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function insertOrUpdateDoctor(data) {
+  const branch = data.branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName, ['ไอดี', 'ช่วงเวลา', 'สลอต', 'วันหยุด', 'วันหยุดประจำสัปดาห์ (0-6)', 'รายชื่อหมอ']);
+  const values = sheet.getDataRange().getValues();
+  let id = data['ไอดี'];
+  let isUpdate = false;
+  let targetRowIndex = -1;
+
+  if (!data['รายชื่อหมอ'] || data['รายชื่อหมอ'].trim() === '') {
+    return { success: false, message: 'กรุณาระบุชื่อหมอ' };
+  }
+
+  // ถ้ามี ID แล้ว (กรณีแก้ไข) ให้หาแถวที่มี ID นั้น
+  if (id) {
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][0]) === String(id)) {
+        targetRowIndex = i;
+        isUpdate = true;
+        break;
+      }
+    }
+  }
+
+  // กรณีเพิ่มใหม่ (ไม่มี ID หรือหาไม่เจอ)
+  if (!isUpdate) {
+    // ค้นหาแถวที่ยังไม่มีชื่อหมอในคอลัมน์ F โดยเริ่มจากแถว 2
+    let emptyDoctorRowIndex = -1;
+    for (let i = 1; i < values.length; i++) {
+      if (!values[i][5] || values[i][5].toString().trim() === '') { // คอลัมน์ F (index 5) ว่าง
+        emptyDoctorRowIndex = i;
+        break; // หยุดทันทีเมื่อเจอแถวว่างแถวแรก
+      }
+    }
+
+    if (emptyDoctorRowIndex !== -1) {
+      // เจอแถวที่คอลัมน์ F ว่าง ให้ใช้แถวนั้น
+      id = String(values[emptyDoctorRowIndex][0]) || String(emptyDoctorRowIndex + 1);
+      sheet.getRange(emptyDoctorRowIndex + 1, 6).setValue(data['รายชื่อหมอ']); // อัปเดตเฉพาะคอลัมน์ F
+      return { success: true, message: 'เพิ่มหมอใหม่แล้ว', id: id };
+    } else {
+      // ไม่เจอแถวว่าง ให้เพิ่มแถวใหม่ท้ายสุด
+      id = String(sheet.getLastRow() + 1);
+      sheet.appendRow([id, '', '', '', '', data['รายชื่อหมอ']]);
+      return { success: true, message: 'เพิ่มหมอใหม่แล้ว', id: id };
+    }
+  }
+
+  // กรณีอัปเดต (มี ID และเจอแถวแล้ว) - อัปเดตเฉพาะคอลัมน์รายชื่อหมอ
+  sheet.getRange(targetRowIndex + 1, 6).setValue(data['รายชื่อหมอ']);
+  return { success: true, message: 'อัปเดตข้อมูลหมอแล้ว', id: id };
+}
+
+function deleteDoctor(id, branch) {
+  branch = branch || '1';
+  const sheetName = getSheetNameByBranch(SHEET_NAME_SETTING, branch);
+  const sheet = getOrCreateSheet(sheetName);
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) {
+      // Clear only doctor name column (F - index 5)
+      sheet.getRange(i + 1, 6).setValue('');
+      return { success: true, message: 'ลบข้อมูลหมอแล้ว' };
+    }
+  }
+  return { success: false, message: 'ไม่พบ ID หมอที่จะลบ' };
 }
 
 
@@ -408,8 +561,8 @@ function checkAdminCredentials(data) {
     }
 
     // อ่านข้อมูลทั้งหมด ยกเว้นแถวหัวคอลัมน์
-    // คอลัมน์ในชีต “แอดมิน” คือ:
-    // A: ID    | B: UserID    | C: ชื่อ         | D: เบอร์โทร | E: username | F: password
+    // คอลัมน์ในชีต "แอดมิน" คือ:
+    // A: ID | B: UserID | C: ชื่อ | D: เบอร์โทร | E: username | F: password | G: สาขาที่ดูแล
     const rows = sheet.getDataRange().getValues().slice(1);
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -417,11 +570,24 @@ function checkAdminCredentials(data) {
       const storedPassword = String(row[5] || '');       // คอลัมน์ F: password (plaintext)
 
       if (usernameInput === storedUsername && passwordInput === storedPassword) {
-        const displayName = String(row[2] || '').trim(); // คอลัมน์ C: ชื่อ (ต้องการแสดง)
+        const displayName = String(row[2] || '').trim(); // คอลัมน์ C: ชื่อ
+        const branches = String(row[6] || '1').trim();   // คอลัมน์ G: สาขาที่ดูแล (เช่น "1,2" หรือ "all")
+        
+        // แปลงสาขาเป็น array
+        let branchArray = [];
+        if (branches.toLowerCase() === 'all' || branches === '*') {
+          branchArray = ['all']; // แอดมินดูแลทุกสาขา
+        } else {
+          branchArray = branches.split(',').map(b => b.trim()).filter(b => b);
+          if (branchArray.length === 0) branchArray = ['1']; // default ถ้าไม่มีข้อมูล
+        }
+        
         return {
           success: true,
           message: 'ล็อกอินสำเร็จ',
-          displayName: displayName || storedUsername // ถ้าไม่เจอชื่อ ให้ fallback เป็น username
+          displayName: displayName || storedUsername,
+          branches: branchArray, // ส่งรายการสาขาที่ดูแล
+          defaultBranch: branchArray[0] === 'all' ? '1' : branchArray[0] // สาขาเริ่มต้น
         };
       }
     }

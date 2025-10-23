@@ -206,6 +206,13 @@
                         class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div class="flex items-center space-x-4">
+                    <div class="flex items-center gap-2">
+                        <label for="branchSelector" class="text-sm font-medium text-slate-700 font-thai">สาขา:</label>
+                        <select id="branchSelector" class="p-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-thai">
+                            <option value="1">สาขา 1</option>
+                            <option value="2">สาขา 2</option>
+                        </select>
+                    </div>
                     <button class="text-slate-500 hover:text-slate-700"><svg xmlns="http://www.w3.org/2000/svg"
                             class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -423,6 +430,8 @@
         function logout() {
             localStorage.removeItem('isAdminLoggedIn');
             localStorage.removeItem('adminName');
+            localStorage.removeItem('adminBranches');
+            localStorage.removeItem('branch');
             window.location.href = 'login.html';
         }
 
@@ -490,6 +499,40 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Branch selector logic with admin permissions
+            const branchSelector = document.getElementById('branchSelector');
+            const savedBranch = localStorage.getItem('branch') || '1';
+            
+            // ตรวจสอบสิทธิ์สาขาของแอดมิน
+            const adminBranchesStr = localStorage.getItem('adminBranches');
+            const adminBranches = adminBranchesStr ? JSON.parse(adminBranchesStr) : ['1'];
+            
+            // ถ้าแอดมินดูแลเฉพาะบางสาขา ให้กรองตัวเลือก
+            if (adminBranches[0] !== 'all') {
+                // ลบตัวเลือกที่ไม่อยู่ในสิทธิ์
+                const options = branchSelector.querySelectorAll('option');
+                options.forEach(opt => {
+                    if (!adminBranches.includes(opt.value)) {
+                        opt.remove();
+                    }
+                });
+                
+                // ถ้าสาขาปัจจุบันไม่อยู่ในสิทธิ์ ให้เปลี่ยนเป็นสาขาแรกที่มีสิทธิ์
+                if (!adminBranches.includes(savedBranch)) {
+                    localStorage.setItem('branch', adminBranches[0]);
+                    branchSelector.value = adminBranches[0];
+                } else {
+                    branchSelector.value = savedBranch;
+                }
+            } else {
+                branchSelector.value = savedBranch;
+            }
+            
+            branchSelector.addEventListener('change', function() {
+                localStorage.setItem('branch', this.value);
+                location.reload();
+            });
+
             fetchInitialData();
             statusFilterSelect.addEventListener('change', () => {
                 currentPage = 1;
@@ -528,7 +571,8 @@
         async function fetchInitialData() {
             showLoading();
             try {
-                const res = await fetch(`${WEB_APP_URL}?action=fetchBookings`);
+                const branch = localStorage.getItem('branch') || '1';
+                const res = await fetch(`${WEB_APP_URL}?action=fetchBookings&branch=${branch}`);
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
                 allAppointmentsData = data.map(d => {
@@ -778,7 +822,11 @@
         function confirmAction(message, action, id) {
             showAlert(message, () => {
                 showLoading();
-                fetch(`${WEB_APP_URL}?action=${action}&id=${encodeURIComponent(id)}`, {
+                // ค้นหา branch จากข้อมูลการจอง
+                const appointment = allAppointmentsData.find(appt => appt.idKey === id);
+                const branch = appointment && appointment.branch ? appointment.branch : (localStorage.getItem('branch') || '1');
+                
+                fetch(`${WEB_APP_URL}?action=${action}&id=${encodeURIComponent(id)}&branch=${branch}`, {
                     method: 'POST'
                 })
                     .then(response => {
@@ -886,10 +934,14 @@
             document.getElementById('appointmentId').value = appointmentId;
             document.getElementById('appointmentDate').value = appointmentDate;
 
-            // ดึงรายชื่อหมอจากวันที่นั้นๆ
+            // ค้นหาข้อมูลการจองเพื่อดึง branch
+            const appointment = allAppointmentsData.find(appt => appt.idKey === appointmentId);
+            const branch = appointment && appointment.branch ? appointment.branch : (localStorage.getItem('branch') || '1');
+
+            // ดึงรายชื่อหมอจากวันที่นั้นๆ ตามสาขา
             showLoading();
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=getDoctorsByDate&date=${appointmentDate}`);
+                const response = await fetch(`${WEB_APP_URL}?action=getDoctorsByDate&date=${appointmentDate}&branch=${branch}`);
                 const doctors = await response.json();
 
                 doctorSelect.innerHTML = '<option value="">-- เลือกหมอ --</option>';
@@ -913,11 +965,16 @@
             e.preventDefault();
             showLoading();
 
+            const appointmentId = document.getElementById('appointmentId').value;
+            const appointment = allAppointmentsData.find(appt => appt.idKey === appointmentId);
+            const branch = appointment && appointment.branch ? appointment.branch : (localStorage.getItem('branch') || '1');
+
             const formData = new FormData();
             formData.append('action', 'updateAppointmentDoctor');
-            formData.append('id', document.getElementById('appointmentId').value);
+            formData.append('id', appointmentId);
             formData.append('doctor', doctorSelect.value);
             formData.append('room', document.getElementById('roomSelect').value);
+            formData.append('branch', branch);
 
             try {
                 const response = await fetch(WEB_APP_URL, {
