@@ -180,35 +180,36 @@
             }
         });
 
-        // --- วางทับฟังก์ชันนี้ทั้งหมดใน confirm.html ---
-async function handleAction(action, bookingId) {
-    showLoading(true, "กำลังดำเนินการ...");
-    try {
-        // *** จุดที่แก้ไข: เปลี่ยนรูปแบบการ fetch ให้เรียบง่ายขึ้น ***
-        // เราส่งข้อมูลทั้งหมดผ่าน URL อยู่แล้ว จึงไม่จำเป็นต้องมี headers หรือ body
-        const response = await fetch(`${WEB_APP_URL}?action=${action}&id=${bookingId}`, {
-            method: 'POST' 
-        });
+        // --- โค้ดที่แก้ไขแล้ว ---
+        async function handleAction(action, bookingId) {
+            showLoading(true, "กำลังดำเนินการ...");
+            try {
+                // *** จุดที่แก้ไข: เปลี่ยน method เป็น 'GET' ***
+                const response = await fetch(`${WEB_APP_URL}?action=${action}&id=${bookingId}`, {
+                    method: 'GET' 
+                });
 
-        const resultText = await response.text();
-        if (!response.ok) {
-            // ถ้าเซิร์ฟเวอร์ส่งข้อความ error กลับมา ให้แสดงข้อความนั้น
-            throw new Error(resultText || "การดำเนินการไม่สำเร็จ");
+                const resultText = await response.text();
+                if (!response.ok) {
+                    // ถ้าเซิร์ฟเวอร์ส่งข้อความ error กลับมา ให้แสดงข้อความนั้น
+                    throw new Error(resultText || "การดำเนินการไม่สำเร็จ");
+                }
+
+                let message = 'ดำเนินการเรียบร้อยแล้ว';
+                if (action === 'confirmBooking') {
+                    message = 'ยืนยันการนัดหมายสำเร็จแล้ว';
+                } else if (action === 'cancelBooking') {
+                    message = 'ยกเลิกการนัดหมายสำเร็จแล้ว';
+                }
+                showSuccess(message);
+
+            } catch (error) {
+                // แสดงข้อความ Error ที่มาจาก Server หรือ "Load failed" กรณีเชื่อมต่อไม่ได้เลย
+                showError(`ผิดพลาด: ${error.message}`);
+            } finally {
+                // ไม่ต้องทำอะไรเพิ่มเติมใน finally block นี้
+            }
         }
-
-        let message = 'ดำเนินการเรียบร้อยแล้ว';
-        if (action === 'confirmBooking') {
-            message = 'ยืนยันการนัดหมายสำเร็จแล้ว';
-        } else if (action === 'cancelBooking') {
-            message = 'ยกเลิกการนัดหมายสำเร็จแล้ว';
-        }
-        showSuccess(message);
-
-    } catch (error) {
-        // แสดงข้อความ Error ที่มาจาก Server หรือ "Load failed" กรณีเชื่อมต่อไม่ได้เลย
-        showError(`ผิดพลาด: ${error.message}`);
-    }
-}
 
         function showLoading(isLoading, text) {
             const overlay = document.getElementById('loadingOverlay');
