@@ -1011,7 +1011,6 @@
                     <div class="col-span-2 flex flex-col items-center justify-center py-8">
                         <div class="flex items-center mb-3">
                             <div class="service-loader"></div>
-                            <span class="loading-text">${t('service.loading') || 'กำลังโหลดบริการ...'}</span>
                         </div>
                     </div>
                 `;
@@ -1024,7 +1023,6 @@
                     langSwitch.style.opacity = '0.6';
                 }
             } else {
-                // re-enable controls; content will be refreshed by fetchServiceData
                 if (nextBtn) {
                     nextBtn.disabled = false;
                     nextBtn.classList.remove('btn-loading');
@@ -1043,11 +1041,23 @@
                 `<svg class="w-12 h-12 text-base mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>` :
                 `<svg class="w-12 h-12 text-error mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
 
-            $('popupContent').innerHTML = `
-          <div class="py-4 text-center">${icon}<p>${msg}</p></div>
-          <div class="mt-4 text-center">
-            <button onclick="hidePopup()" class="btn btn-secondary w-full sm:w-auto px-6">${t('popup.close')}</button>
-          </div>`;
+                        $('popupContent').innerHTML = `
+                    <div class="py-4 text-center">${icon}<p>${msg}</p></div>
+                    <div class="mt-4 text-center">
+                        <button id="popupCloseBtn" class="btn btn-secondary w-full sm:w-auto px-6">${t('popup.close')}</button>
+                    </div>`;
+                        // Add LIFF close logic for booking success
+                        setTimeout(() => {
+                                const btn = document.getElementById('popupCloseBtn');
+                                if (btn) {
+                                        btn.onclick = function() {
+                                                hidePopup();
+                                                if (msgKey === 'popup.bookingSuccess' && window.liff && typeof liff.closeWindow === 'function') {
+                                                        liff.closeWindow();
+                                                }
+                                        };
+                                }
+                        }, 0);
             const popupEl = $('popup');
             popupEl.style.display = 'flex';
             setTimeout(() => popupEl.classList.add('visible'), 10);
