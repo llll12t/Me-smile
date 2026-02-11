@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Me-smile</title>
+    <title>Me-smile | History</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js" defer></script>
@@ -641,12 +641,12 @@
                     class="w-10 h-10 object-contain rounded-md" />
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 mt-4">
-            <button id="bookingTab" type="button" class="tab-toggle active" data-translate-key="tab.booking"></button>
-            <button id="historyTab" type="button" class="tab-toggle" data-translate-key="tab.history"></button>
+        <div class="grid grid-cols-1 gap-2 mt-4">
+            <button id="bookingTab" type="button" class="tab-toggle hidden" data-translate-key="tab.booking"></button>
+            <button id="historyTab" type="button" class="tab-toggle active" data-translate-key="tab.history"></button>
         </div>
 
-        <section id="bookingSection" class="mt-4">
+        <section id="bookingSection" class="hidden mt-4">
             <form id="bookingForm" novalidate class="flex flex-col flex-1 relative">
                 <div class="step step-active" id="step1">
                     <label class="block mb-3 text-lg text-center text-base font-semibold"
@@ -750,7 +750,7 @@
             </form>
         </section>
 
-        <section id="historySection" class="hidden mt-6">
+        <section id="historySection" class="mt-6">
             <div class="flex flex-col gap-3">
                 <div class="flex justify-between items-center">
                     <h2 id="historyTitle" class="text-lg font-bold" data-translate-key="history.title"></h2>
@@ -1100,7 +1100,7 @@
 
         async function initLiff() {
             try {
-                await liff.init({ liffId: LIFF_ID });
+                await liff.init({ liffId: LIFF_ID_HISTORY });
                 if (!liff.isLoggedIn()) return liff.login();
                 const p = await liff.getProfile();
                 $('greetingName').textContent = p.displayName;
@@ -1670,8 +1670,10 @@
         };
         $('backToStep3').onclick = () => navigateToStep('step3');
 
-        $('bookingTab').onclick = () => switchView('booking');
-        $('historyTab').onclick = () => switchView('history');
+        const bookingTabEl = $('bookingTab');
+        if (bookingTabEl) bookingTabEl.onclick = () => switchView('booking');
+        const historyTabEl = $('historyTab');
+        if (historyTabEl) historyTabEl.onclick = () => switchView('history');
 
         ['statusFilter', 'dateSort'].forEach(id => {
             const el = $(id);

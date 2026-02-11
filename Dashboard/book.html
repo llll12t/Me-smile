@@ -18,14 +18,11 @@
 
 
     <style>
-        body {
-            font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+       body {
+            font-family: 'Inter', sans-serif;
+            /* Default font */
         }
-
-        .font-thai {
-            font-family: 'Noto Sans Thai', sans-serif;
-        }
-
+ 
         .table-scroll-container::-webkit-scrollbar {
             /* For potential tables if added later */
             width: 6px;
@@ -284,13 +281,13 @@
     <main class="ml-64 flex-1 flex flex-col">
         <header class="bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
             <h1 class="text-xl font-semibold text-slate-700 font-thai">สร้างการจองใหม่</h1>
-            <div class="flex items-center gap-2">
-                <label for="branchSelector" class="text-sm font-medium text-slate-700 font-thai">สาขา:</label>
-                <select id="branchSelector" class="p-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500 font-thai">
-                    <option value="1">สาขา 1</option>
-                    <option value="2">สาขา 2</option>
-                </select>
-            </div>
+                <div class="flex items-center gap-2">
+                    <label for="branchSelector" class="text-sm font-medium text-slate-700 font-thai">โรงงาน :</label>
+                    <select id="branchSelector" class="p-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-thai">
+                        <option value="1">CPF มีนบุรี 1</option>
+                        <option value="2">CPF มีนบุรี 2</option>
+                    </select>
+                </div>
         </header>
 
         <div class="flex-1 p-6 overflow-y-auto">
@@ -647,16 +644,20 @@
         async function fetchHolidayDates() {
             try {
                 const branch = localStorage.getItem('branch') || '1';
-                const res = await fetch(`${WEB_APP_URL}?action=checkAvailability&getHolidays=true&branch=${branch}`);
+                const res = await fetch(`${WEB_APP_URL}?action=checkAvailability&getWorkdays=true&branch=${branch}`);
                 if (!res.ok) throw new Error('Network error fetching holidays');
                 const j = await res.json();
                 // รับค่าทั้งวันหยุดพิเศษ และวันหยุดประจำสัปดาห์
-                window.holidayDates = Array.isArray(j.holidays) ? j.holidays : [];
-                window.permanentHolidayDays = Array.isArray(j.permanentHolidays) ? j.permanentHolidays : [];
+                window.specialWorkdays = Array.isArray(j.workdays)
+                    ? j.workdays
+                    : (Array.isArray(j.holidays) ? j.holidays : []);
+                window.weeklyWorkdays = Array.isArray(j.weeklyWorkdays)
+                    ? j.weeklyWorkdays
+                    : (Array.isArray(j.permanentHolidays) ? j.permanentHolidays : []);
             } catch (err) {
                 console.error("fetchHolidayDates error:", err);
-                window.holidayDates = [];
-                window.permanentHolidayDays = [];
+                window.specialWorkdays = [];
+                window.weeklyWorkdays = [];
             }
         }
 
@@ -683,9 +684,10 @@
                     (d) => {
                         const k = formatDateForFlatpickr(d);
                         // เพิ่มเงื่อนไข: ตรวจสอบว่าวันในสัปดาห์ (0=อาทิตย์, 6=เสาร์) ตรงกับวันหยุดประจำสัปดาห์หรือไม่
-                        const isPermanentHoliday = (window.permanentHolidayDays || []).includes(d.getDay());
+                        const isWorkingDay = (window.weeklyWorkdays || []).includes(d.getDay())
+                            || (window.specialWorkdays || []).includes(k);
 
-                        return isPermanentHoliday || (window.holidayDates || []).includes(k) || monthAvailability[k] === 'full';
+                        return !isWorkingDay || monthAvailability[k] === 'full';
                     },
                 ],
                 onDayCreate: (dObj, dStr, fp, dayElem) => {
@@ -693,10 +695,10 @@
                     const date = dayElem.dateObj;
 
                     // ตรวจสอบวันหยุดทั้ง 2 ประเภท
-                    const isSpecialHoliday = (window.holidayDates || []).includes(k);
-                    const isPermanentHoliday = (window.permanentHolidayDays || []).includes(date.getDay());
+                    const isWorkingDay = (window.weeklyWorkdays || []).includes(date.getDay())
+                        || (window.specialWorkdays || []).includes(k);
 
-                    if (isSpecialHoliday || isPermanentHoliday) {
+                    if (!isWorkingDay) {
                         dayElem.innerHTML += `<span class="day-holiday-indicator font-thai">หยุด</span>`;
                     }
                 },

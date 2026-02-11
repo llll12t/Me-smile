@@ -2,818 +2,530 @@
 <html lang="th">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ตั้งค่าทั่วไป - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet" />
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .font-thai {
-            font-family: 'Noto Sans Thai', sans-serif;
-        }
-        
-        .table-scroll-container::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        
-        .table-scroll-container::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            /* slate-300 */
-            border-radius: 3px;
-        }
-        
-        .table-scroll-container::-webkit-scrollbar-track {
-            background-color: #f1f5f9;
-            /* slate-100 */
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
-        .loading-placeholder td {
-            text-align: center;
-            padding: 1rem;
-            color: #64748b;
-            /* slate-500 */
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตั้งค่าทั่วไป - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .font-thai {
+      font-family: 'Noto Sans Thai', sans-serif;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .table-scroll-container::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-track {
+      background-color: #f1f5f9;
+    }
+  </style>
 </head>
 
 <body class="bg-slate-100 min-h-screen flex">
-
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white p-5 border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-30">
-        <div class="flex items-center space-x-2 mb-8">
-            <div class="bg-green-400 p-2 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-            </div>
-            <h1 class="text-xl font-bold text-slate-800">ME-SMILE</h1>
+  <aside class="w-64 bg-white p-5 border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-30">
+    <h1 class="text-xl font-bold text-slate-800 mb-6">ME-SMILE</h1>
+    <div class="bg-slate-50 p-3 rounded-lg mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p id="adminName" class="text-sm font-semibold text-slate-700 font-thai">Dashboard User</p>
+          <p class="text-xs text-slate-500 font-thai">ผู้ดูแลระบบ</p>
         </div>
-            <!-- ===================================================================
-            (B) แสดงชื่อผู้ดูแลที่ล็อกอินมาแล้ว (ดึงจาก localStorage.adminName)
-            =================================================================== -->
-            <div class="bg-slate-50 p-3 rounded-lg mb-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <div>
-                            <p id="adminName" class="text-sm font-semibold text-slate-700 font-thai">Dashboard User</p>
-                            <p class="text-xs text-slate-500 font-thai">ผู้ดูแลระบบ</p>
-                        </div>
-                    </div>
-                    <!-- ปุ่ม Logout -->
-                    <button onclick="logout()" class="text-red-500 hover:text-red-700 text-sm font-thai">
-                        logout
-                    </button>
-                </div>
-            </div>
-       <nav class="flex-grow space-y-1">
-                <p class="text-xs text-slate-400 uppercase font-semibold px-3 mb-2">Main Menu</p>
-                <a href="book.html"
-                    class="flex items-center space-x-3 px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span>จองนัดหมายใหม่</span>
-                </a>
-                <a href="appointment.html"
-                    class="flex items-center space-x-3 px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>จัดการนัดหมาย</span>
-                </a>
-                <a href="service.html"
-                    class="flex items-center space-x-3 px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <span>จัดการบริการ</span>
-                </a>
-                <a href="member.html"
-                    class="flex items-center space-x-3 px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <span>จัดการสมาชิก</span>
-                </a>
-                <a href="doctor.html"
-                    class="flex items-center space-x-3 px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>จัดการข้อมูลหมอ</span>
-                </a>
-                <a href="setting.html"
-                    class="flex items-center space-x-3 px-3 py-2.5 bg-green-100 text-green-700 rounded-md text-sm font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>ตั้งค่า</span>
-                </a>
-            </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="ml-64 flex-1 flex flex-col">
-        <header class="bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
-            <h1 class="text-xl font-semibold text-slate-700 font-thai">ตั้งค่าทั่วไป</h1>
-            <div class="flex gap-2 items-center">
-                <button id="branchBtn1" type="button" class="bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-4 rounded-md text-sm font-thai branch-btn" data-branch="1">สาขา 1</button>
-                <button id="branchBtn2" type="button" class="bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-4 rounded-md text-sm font-thai branch-btn" data-branch="2">สาขา 2</button>
-            </div>
-        </header>
-
-        <div class="flex-1 p-6 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Time Slot Settings Card -->
-            <section class="bg-white p-6 rounded-lg shadow">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-slate-700 font-thai">⏱️ ตั้งค่าช่วงเวลาให้บริการ</h2>
-                    <button onclick="showTimeSlotForm()" class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-md text-sm flex items-center space-x-1.5 font-thai">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                        <span>เพิ่มช่วงเวลา</span>
-                    </button>
-                </div>
-                <div id="timeSlotFormSection" class="hidden mb-4 border-t border-slate-200 pt-4">
-                    <form id="timeSlotForm" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                        <div>
-                            <label for="ts-id" class="block text-xs font-medium text-slate-600 font-thai">ไอดี</label>
-                            <input id="ts-id" name="ไอดี" class="mt-1 block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-md text-sm" readonly placeholder="อัตโนมัติ">
-                        </div>
-                        <div>
-                            <label for="ts-time" class="block text-xs font-medium text-slate-600 font-thai">ช่วงเวลา <span class="text-red-500">*</span></label>
-                            <input id="ts-time" name="ช่วงเวลา" type="time" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500">
-                        </div>
-                        <div>
-                            <label for="ts-slots" class="block text-xs font-medium text-slate-600 font-thai">จำนวนสล็อต <span class="text-red-500">*</span></label>
-                            <input id="ts-slots" name="สลอต" type="number" min="1" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500" placeholder="เช่น 1">
-                        </div>
-                        <div class="sm:col-span-3 flex justify-end space-x-2 mt-2">
-                            <button type="button" onclick="hideTimeSlotForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-md text-sm font-thai">ยกเลิก</button>
-                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded-md text-sm flex items-center space-x-1.5 font-thai">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 1C6.11929 1 5 2.11929 5 3.5V4H4C3.44772 4 3 4.44772 3 5V17C3 17.5523 3.44772 18 4 18H16C16.5523 18 17 17.5523 17 17V5C17 4.44772 16.5523 4 16 4H15V3.5C15 2.11929 13.8807 1 12.5 1H7.5ZM7 3.5C7 3.22386 7.22386 3 7.5 3H12.5C12.7761 3 13 3.22386 13 3.5V4H7V3.5Z M6 6H14V16H6V6Z" /></svg>
-                                <span>บันทึก</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <div id="timeSlotTableContainer" class="overflow-x-auto table-scroll-container">
-                    <!-- Loading message will be injected here by JS -->
-                </div>
-            </section>
-
-            <!-- Holiday Settings Card -->
-            <section class="bg-white p-6 rounded-lg shadow">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-slate-700 font-thai">🗓️ ตั้งค่าวันหยุดพิเศษ</h2>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-3 mb-4 items-end">
-                    <div class="flex-grow">
-                        <label for="holidayInput" class="block text-xs font-medium text-slate-600 font-thai">เลือกวันที่ต้องการเพิ่มเป็นวันหยุด</label>
-                        <input id="holidayInput" type="date" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500">
-                    </div>
-                    <button onclick="addHoliday()" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-md text-sm flex items-center justify-center space-x-1.5 font-thai">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                        <span>เพิ่มวันหยุด</span>
-                    </button>
-                </div>
-                <div id="holidayTableContainer" class="overflow-x-auto table-scroll-container">
-                    <!-- Loading message will be injected here by JS -->
-                </div>
-            </section>
-<section class="bg-white p-6 rounded-lg shadow lg:col-span-2"> <h2 class="text-lg font-semibold text-slate-700 mb-4 font-thai">⚙️ ตั้งค่าวันหยุดประจำสัปดาห์</h2>
-    <p class="text-sm text-slate-500 mb-4 font-thai">เลือกวันที่ต้องการให้เป็นวันหยุดถาวรในทุกสัปดาห์ การตั้งค่านี้จะมีผลกับปฏิทินในหน้าจองของลูกค้า</p>
-    
-    <div id="permanentHolidaysContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50">
-            <input type="checkbox" value="0" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 day-checkbox">
-            <span class="text-slate-700 font-thai">วันอาทิตย์</span>
-        </label>
-        <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50">
-            <input type="checkbox" value="1" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 day-checkbox">
-            <span class="text-slate-700 font-thai">วันจันทร์</span>
-        </label>
-        <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50">
-            <input type="checkbox" value="2" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 day-checkbox">
-            <span class="text-slate-700 font-thai">วันอังคาร</span>
-        </label>
-        <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50">
-            <input type="checkbox" value="3" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 day-checkbox">
-            <span class="text-slate-700 font-thai">วันพุธ</span>
-        </label>
-        <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50">
-            <input type="checkbox" value="4" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 day-checkbox">
-            <span class="text-slate-700 font-thai">วันพฤหัสบดี</span>
-        </label>
-        <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50">
-            <input type="checkbox" value="5" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 day-checkbox">
-            <span class="text-slate-700 font-thai">วันศุกร์</span>
-        </label>
-        <label class="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-50">
-            <input type="checkbox" value="6" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 day-checkbox">
-            <span class="text-slate-700 font-thai">วันเสาร์</span>
-        </label>
+        <button onclick="logout()" class="text-red-500 hover:text-red-700 text-sm font-thai">ออกจากระบบ</button>
+      </div>
     </div>
-    
-    <div class="flex justify-end border-t border-slate-200 pt-4">
-        <button id="saveHolidaysBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm flex items-center space-x-2 font-thai">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 1C6.11929 1 5 2.11929 5 3.5V4H4C3.44772 4 3 4.44772 3 5V17C3 17.5523 3.44772 18 4 18H16C16.5523 18 17 17.5523 17 17V5C17 4.44772 16.5523 4 16 4H15V3.5C15 2.11929 13.8807 1 12.5 1H7.5ZM7 3.5C7 3.22386 7.22386 3 7.5 3H12.5C12.7761 3 13 3.22386 13 3.5V4H7V3.5Z M6 6H14V16H6V6Z" /></svg>
-            <span>บันทึกการตั้งค่าวันหยุดประจำ</span>
-        </button>
-    </div>
-</section>
+    <nav class="flex-grow space-y-1">
+      <a href="book.html" class="block px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">จองนัดหมายใหม่</a>
+      <a href="appointment.html" class="block px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">จัดการนัดหมาย</a>
+      <a href="service.html" class="block px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">จัดการบริการ</a>
+      <a href="member.html" class="block px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">จัดการสมาชิก</a>
+      <a href="doctor.html" class="block px-3 py-2.5 text-slate-600 hover:bg-indigo-50 hover:text-green-700 rounded-md text-sm font-medium">จัดการข้อมูลหมอ</a>
+      <a href="setting.html" class="block px-3 py-2.5 bg-green-100 text-green-700 rounded-md text-sm font-semibold">ตั้งค่า</a>
+    </nav>
+  </aside>
 
-            <!-- Doctor Names Management Card -->
-            <section class="bg-white p-6 rounded-lg shadow lg:col-span-2">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-slate-700 font-thai">👨‍⚕️ จัดการรายชื่อหมอ</h2>
-                    <button onclick="showDoctorForm()" class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-md text-sm flex items-center space-x-1.5 font-thai">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                        <span>เพิ่มหมอ</span>
-                    </button>
-                </div>
-                <div id="doctorFormSection" class="hidden mb-4 border-t border-slate-200 pt-4">
-                    <form id="doctorForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                        <div>
-                            <label for="doc-id" class="block text-xs font-medium text-slate-600 font-thai">ไอดี</label>
-                            <input id="doc-id" name="ไอดี" class="mt-1 block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-md text-sm" readonly placeholder="อัตโนมัติ">
-                        </div>
-                        <div>
-                            <label for="doc-name" class="block text-xs font-medium text-slate-600 font-thai">ชื่อหมอ <span class="text-red-500">*</span></label>
-                            <input id="doc-name" name="รายชื่อหมอ" type="text" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500" placeholder="เช่น ทพ.สมชาย ใจดี">
-                        </div>
-                        <div class="sm:col-span-2 flex justify-end space-x-2 mt-2">
-                            <button type="button" onclick="hideDoctorForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-md text-sm font-thai">ยกเลิก</button>
-                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded-md text-sm flex items-center space-x-1.5 font-thai">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 1C6.11929 1 5 2.11929 5 3.5V4H4C3.44772 4 3 4.44772 3 5V17C3 17.5523 3.44772 18 4 18H16C16.5523 18 17 17.5523 17 17V5C17 4.44772 16.5523 4 16 4H15V3.5C15 2.11929 13.8807 1 12.5 1H7.5ZM7 3.5C7 3.22386 7.22386 3 7.5 3H12.5C12.7761 3 13 3.22386 13 3.5V4H7V3.5Z M6 6H14V16H6V6Z" /></svg>
-                                <span>บันทึก</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <div id="doctorTableContainer" class="overflow-x-auto table-scroll-container">
-                    <!-- Loading message will be injected here by JS -->
-                </div>
-            </section>
-
-
+  <main class="ml-64 flex-1 flex flex-col">
+    <header class="bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
+      <h1 class="text-xl font-semibold text-slate-700 font-thai">ตั้งค่าทั่วไป</h1>
+      <div class="flex gap-4 items-center">
+        <label for="branchDropdown" class="text-sm font-medium text-slate-700 font-thai">สาขา:</label>
+        <select id="branchDropdown" class="border font-medium py-1 px-4 rounded-md text-sm font-thai">
+          <option value="1">CPF มีนบุรี 1</option>
+          <option value="2">CPF มีนบุรี 2</option>
+        </select>
+        <div class="border-l border-slate-200 pl-4 flex items-center gap-3">
+          <button id="updateBotBtn" onclick="updateBotStatus()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm font-thai">
+            อัปเดตข้อมูล
+          </button>
+          <div class="flex flex-col text-xs font-thai">
+            <div class="flex items-center gap-2"><span class="text-slate-600">สถานะ:</span><span id="botStatusLabel" class="font-semibold text-slate-800">-</span></div>
+            <div class="flex items-center gap-2"><span class="text-slate-500">อัปเดต:</span><span id="botLastedExecute" class="text-slate-700">-</span></div>
+            <div class="flex items-center gap-2"><span class="text-slate-500">Stage:</span><span id="botStage" class="text-green-600 font-medium">-</span><span id="autoCheckIndicator" class="hidden">...</span></div>
+          </div>
         </div>
-    </main>
-    <!-- Assume Config.js defines WEB_APP_URL -->
-    <script src="Config.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-    // Branch button logic
-    const savedBranch = localStorage.getItem('branch') || '1';
-    function setBranchUI(branch) {
-        localStorage.setItem('branch', branch);
-        // Highlight selected branch
-        document.querySelectorAll('.branch-btn').forEach(btn => {
-            if (btn.dataset.branch === branch) {
-                btn.classList.add('bg-green-700');
-                btn.classList.remove('bg-green-500');
-            } else {
-                btn.classList.remove('bg-green-700');
-                btn.classList.add('bg-green-500');
-            }
-        });
+      </div>
+    </header>
+
+    <div class="flex-1 p-6 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section class="bg-white p-6 rounded-lg shadow">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-slate-700 font-thai">ตั้งค่าช่วงเวลาให้บริการ</h2>
+          <button onclick="showTimeSlotForm()" class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-md text-sm font-thai">เพิ่มช่วงเวลา</button>
+        </div>
+        <div id="timeSlotFormSection" class="hidden mb-4 border-t border-slate-200 pt-4">
+          <form id="timeSlotForm" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <div>
+              <label for="ts-id" class="block text-xs font-medium text-slate-600 font-thai">ไอดี</label>
+              <input id="ts-id" class="mt-1 block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-md text-sm" readonly>
+            </div>
+            <div>
+              <label for="ts-time" class="block text-xs font-medium text-slate-600 font-thai">ช่วงเวลา</label>
+              <input id="ts-time" type="time" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+            </div>
+            <div>
+              <label for="ts-slots" class="block text-xs font-medium text-slate-600 font-thai">จำนวนสล็อต</label>
+              <input id="ts-slots" type="number" min="1" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+            </div>
+            <div class="sm:col-span-3 flex justify-end space-x-2 mt-2">
+              <button type="button" onclick="hideTimeSlotForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-md text-sm font-thai">ยกเลิก</button>
+              <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded-md text-sm font-thai">บันทึก</button>
+            </div>
+          </form>
+        </div>
+        <div id="timeSlotTableContainer" class="overflow-x-auto table-scroll-container"></div>
+      </section>
+
+      <section class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-lg font-semibold text-slate-700 mb-4 font-thai">วันทำงานพิเศษ</h2>
+        <div class="flex flex-col sm:flex-row gap-3 mb-4 items-end">
+          <div class="flex-grow">
+            <label for="holidayInput" class="block text-xs font-medium text-slate-600 font-thai">เลือกวันที่เปิดให้บริการ</label>
+            <input id="holidayInput" type="date" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+          </div>
+          <button onclick="addWorkday()" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-md text-sm font-thai">เพิ่มวันทำงาน</button>
+        </div>
+        <div id="holidayTableContainer" class="overflow-x-auto table-scroll-container"></div>
+      </section>
+
+      <section class="bg-white p-6 rounded-lg shadow lg:col-span-2">
+        <h2 class="text-lg font-semibold text-slate-700 mb-2 font-thai">วันทำงานประจำรายสัปดาห์</h2>
+        <p class="text-sm text-slate-500 mb-4 font-thai">ติ๊กวันที่ต้องการเปิดทำงาน (ค่าเริ่มต้นคือปิดทุกวัน)</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <label class="flex items-center space-x-3"><input type="checkbox" value="0" class="day-checkbox h-4 w-4"><span class="font-thai">วันอาทิตย์</span></label>
+          <label class="flex items-center space-x-3"><input type="checkbox" value="1" class="day-checkbox h-4 w-4"><span class="font-thai">วันจันทร์</span></label>
+          <label class="flex items-center space-x-3"><input type="checkbox" value="2" class="day-checkbox h-4 w-4"><span class="font-thai">วันอังคาร</span></label>
+          <label class="flex items-center space-x-3"><input type="checkbox" value="3" class="day-checkbox h-4 w-4"><span class="font-thai">วันพุธ</span></label>
+          <label class="flex items-center space-x-3"><input type="checkbox" value="4" class="day-checkbox h-4 w-4"><span class="font-thai">วันพฤหัสบดี</span></label>
+          <label class="flex items-center space-x-3"><input type="checkbox" value="5" class="day-checkbox h-4 w-4"><span class="font-thai">วันศุกร์</span></label>
+          <label class="flex items-center space-x-3"><input type="checkbox" value="6" class="day-checkbox h-4 w-4"><span class="font-thai">วันเสาร์</span></label>
+        </div>
+        <div class="flex justify-end border-t border-slate-200 pt-4">
+          <button id="saveWeeklyWorkdaysBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm font-thai">บันทึกวันทำงานประจำ</button>
+        </div>
+      </section>
+
+      <section class="bg-white p-6 rounded-lg shadow lg:col-span-2">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-slate-700 font-thai">จัดการรายชื่อหมอ</h2>
+          <button onclick="showDoctorForm()" class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-md text-sm font-thai">เพิ่มหมอ</button>
+        </div>
+        <div id="doctorFormSection" class="hidden mb-4 border-t border-slate-200 pt-4">
+          <form id="doctorForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+            <div>
+              <label for="doc-id" class="block text-xs font-medium text-slate-600 font-thai">ไอดี</label>
+              <input id="doc-id" class="mt-1 block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-md text-sm" readonly>
+            </div>
+            <div>
+              <label for="doc-name" class="block text-xs font-medium text-slate-600 font-thai">ชื่อหมอ</label>
+              <input id="doc-name" type="text" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm">
+            </div>
+            <div class="sm:col-span-2 flex justify-end space-x-2 mt-2">
+              <button type="button" onclick="hideDoctorForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-md text-sm font-thai">ยกเลิก</button>
+              <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded-md text-sm font-thai">บันทึก</button>
+            </div>
+          </form>
+        </div>
+        <div id="doctorTableContainer" class="overflow-x-auto table-scroll-container"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="Config.js"></script>
+  <script>
+    const timeSlotTableContainer = document.getElementById('timeSlotTableContainer');
+    const holidayTableContainer = document.getElementById('holidayTableContainer');
+    const doctorTableContainer = document.getElementById('doctorTableContainer');
+
+    const loadingHTML = `<p class="p-3 text-slate-500 font-thai">กำลังโหลดข้อมูล...</p>`;
+
+    function branch() {
+      return localStorage.getItem('branch') || '1';
     }
-    setBranchUI(savedBranch);
-    document.getElementById('branchBtn1').onclick = () => { setBranchUI('1'); location.reload(); };
-    document.getElementById('branchBtn2').onclick = () => { setBranchUI('2'); location.reload(); };
 
-    // ตรวจสอบสถานะล็อกอิน
-    const isLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    function lookup(obj, keys, fallback = '') {
+      for (const k of keys) if (Object.prototype.hasOwnProperty.call(obj, k)) return obj[k];
+      return fallback;
+    }
+
+    function normalizeTimeSlot(row) {
+      const all = Object.keys(row || {});
+      return {
+        id: String(lookup(row, ['ไอดี', 'id', 'ID', 'à¹„à¸­à¸”à¸µ'], all[0] ? row[all[0]] : '')),
+        time: String(lookup(row, ['ช่วงเวลา', 'time', 'à¸Šà¹ˆà¸§à¸‡à¹€à¸§à¸¥à¸²'], all[1] ? row[all[1]] : '')),
+        slots: String(lookup(row, ['สลอต', 'slots', 'slot', 'à¸ªà¸¥à¸­à¸•'], all[2] ? row[all[2]] : ''))
+      };
+    }
+
+    function normalizeDoctor(row) {
+      const all = Object.keys(row || {});
+      return {
+        id: String(lookup(row, ['ไอดี', 'id', 'ID', 'à¹„à¸­à¸”à¸µ'], all[0] ? row[all[0]] : '')),
+        name: String(lookup(row, ['รายชื่อหมอ', 'ชื่อหมอ', 'name', 'doctorName', 'à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¸«à¸¡à¸­'], all[1] ? row[all[1]] : ''))
+      };
+    }
+
+    function showErr(text) {
+      Swal.fire({ icon: 'error', title: 'ผิดพลาด', text, customClass: { popup: 'font-thai' } });
+    }
+
+    async function getJson(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }
+
+    async function postJson(body) {
+      const r = await fetch(CONFIG_URL, { method: 'POST', body: JSON.stringify(body) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }
+
+    function logout() {
+      localStorage.removeItem('isAdminLoggedIn');
+      localStorage.removeItem('adminName');
+      localStorage.removeItem('adminBranches');
+      localStorage.removeItem('branch');
+      window.location.href = 'login.html';
+    }
+
+    function showTimeSlotForm(isEdit = false) {
+      document.getElementById('timeSlotFormSection').classList.remove('hidden');
+      if (!isEdit) {
+        document.getElementById('ts-id').value = '';
+        document.getElementById('ts-time').value = '';
+        document.getElementById('ts-slots').value = '';
+      }
+    }
+
+    function hideTimeSlotForm() {
+      document.getElementById('timeSlotFormSection').classList.add('hidden');
+    }
+
+    function showDoctorForm(isEdit = false) {
+      document.getElementById('doctorFormSection').classList.remove('hidden');
+      if (!isEdit) {
+        document.getElementById('doc-id').value = '';
+        document.getElementById('doc-name').value = '';
+      }
+    }
+
+    function hideDoctorForm() {
+      document.getElementById('doctorFormSection').classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const isLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
+      if (!isLoggedIn) {
         window.location.href = 'login.html';
         return;
-    }
-    const adminName = localStorage.getItem('adminName') || 'Admin';
-    document.getElementById('adminName').textContent = adminName;
-});
+      }
 
-function logout() {
-        localStorage.removeItem('isAdminLoggedIn');
-        localStorage.removeItem('adminName');
-        localStorage.removeItem('adminBranches');
-        localStorage.removeItem('branch');
-        window.location.href = 'login.html';
-        }
-        const timeSlotTableContainer = document.getElementById('timeSlotTableContainer');
-        const holidayTableContainer = document.getElementById('holidayTableContainer');
-        const doctorTableContainer = document.getElementById('doctorTableContainer');
+      document.getElementById('adminName').textContent = localStorage.getItem('adminName') || 'Admin';
+      const branchDropdown = document.getElementById('branchDropdown');
+      branchDropdown.value = branch();
+      branchDropdown.addEventListener('change', () => {
+        localStorage.setItem('branch', branchDropdown.value);
+        location.reload();
+      });
 
-        const loadingHTML = `
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50"><tr><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ข้อมูล</th></tr></thead>
-            <tbody class="bg-white divide-y divide-slate-200">
-                <tr class="loading-placeholder"><td class="font-thai">⏳ กำลังโหลดข้อมูล...</td></tr>
-            </tbody>
-        </table>`;
+      loadTimeSlots();
+      loadWorkdays();
+      loadWeeklyWorkdays();
+      loadDoctors();
+      loadBotStatus();
 
-        // --- Time Slot Management ---
-        function showTimeSlotForm(isEdit = false) {
-            document.getElementById('timeSlotFormSection').classList.remove('hidden');
-            if (!isEdit) {
-                document.getElementById('timeSlotForm').reset();
-                document.getElementById('ts-id').value = '';
-            }
-            document.getElementById('timeSlotFormSection').scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
-        }
-
-        function hideTimeSlotForm() {
-            document.getElementById('timeSlotFormSection').classList.add('hidden');
-            document.getElementById('timeSlotForm').reset();
-        }
-
-        document.getElementById('timeSlotForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const data = {};
-            new FormData(this).forEach((value, key) => data[key] = value);
-            Swal.fire({
-                title: 'กำลังบันทึก...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading(),
-                customClass: {
-                    popup: 'font-thai'
-                }
-            });
-            fetch(CONFIG_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'insertOrUpdateTimeSlot',
-                    data
-                })
-            }).then(r => r.json()).then(result => {
-                if (result.success || result.id) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'สำเร็จ',
-                        text: 'บันทึกข้อมูลช่วงเวลาเรียบร้อย',
-                        customClass: {
-                            popup: 'font-thai'
-                        }
-                    });
-                    this.reset();
-                    hideTimeSlotForm();
-                    loadTimeSlots();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ผิดพลาด',
-                        text: result.message || 'ไม่สามารถบันทึกได้',
-                        customClass: {
-                            popup: 'font-thai'
-                        }
-                    });
-                }
-            }).catch(err => Swal.fire({
-                icon: 'error',
-                title: 'ผิดพลาด',
-                text: `การเชื่อมต่อล้มเหลว: ${err}`,
-                customClass: {
-                    popup: 'font-thai'
-                }
-            }));
-        });
-
-        function loadTimeSlots() {
-            timeSlotTableContainer.innerHTML = loadingHTML; // Show loading message
-            const branch = localStorage.getItem('branch') || '1';
-            fetch(`${CONFIG_URL}?action=fetchTimeSlots&branch=${branch}`)
-                .then(r => r.json())
-                .then(data => {
-                    let html = `
-          <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50"><tr>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ไอดี</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ช่วงเวลา</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">จำนวนสล็อต</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">จัดการ</th>
-            </tr></thead><tbody class="bg-white divide-y divide-slate-200">`;
-                    if (data.length === 0) {
-                        html += `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500 font-thai">ยังไม่มีการตั้งค่าช่วงเวลา</td></tr>`;
-                    } else {
-                        data.forEach(t => {
-                            html += `<tr class="hover:bg-slate-50">
-                <td class="px-3 py-3 whitespace-nowrap text-slate-600 font-mono text-xs">${t['ไอดี']}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-slate-700 font-medium">${t['ช่วงเวลา']}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-slate-700">${t['สลอต']}</td>
-                <td class="px-3 py-3 whitespace-nowrap">
-                <button onclick="editTimeSlot('${t['ไอดี']}')" class="text-green-600 hover:text-green-900 mr-2 font-thai">แก้ไข</button>
-                <button onclick="deleteTimeSlot('${t['ไอดี']}')" class="text-red-600 hover:text-red-900 font-thai">ลบ</button>
-                </td>
-            </tr>`;
-                        });
-                    }
-                    html += '</tbody></table>';
-                    timeSlotTableContainer.innerHTML = html;
-                }).catch(err => {
-                    timeSlotTableContainer.innerHTML = `<p class="p-3 text-red-500 font-thai">โหลดข้อมูลช่วงเวลาล้มเหลว: ${err.message}</p>`;
-                });
-        }
-
-        function editTimeSlot(id) {
-            const branch = localStorage.getItem('branch') || '1';
-            fetch(`${CONFIG_URL}?action=fetchTimeSlots&branch=${branch}`).then(r => r.json()).then(data => {
-                const t = data.find(x => x['ไอดี'] === id);
-                if (!t) return Swal.fire({
-                    icon: 'warning',
-                    title: 'ไม่พบข้อมูล',
-                    customClass: {
-                        popup: 'font-thai'
-                    }
-                });
-                const form = document.getElementById('timeSlotForm');
-                form.elements['ไอดี'].value = t['ไอดี'];
-                form.elements['ช่วงเวลา'].value = t['ช่วงเวลา'];
-                form.elements['สลอต'].value = t['สลอต'];
-                showTimeSlotForm(true);
-            });
-        }
-
-        function deleteTimeSlot(id) {
-            Swal.fire({
-                title: 'ลบช่วงเวลานี้?',
-                text: `ต้องการลบช่วงเวลาไอดี: ${id}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'ใช่, ลบเลย',
-                cancelButtonText: 'ยกเลิก',
-                customClass: {
-                    popup: 'font-thai'
-                }
-            }).then(res => {
-                if (res.isConfirmed) {
-                    const branch = localStorage.getItem('branch') || '1';
-                    fetch(CONFIG_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'deleteTimeSlot',
-                            id,
-                            branch: branch
-                        })
-                    }).then(r => r.json()).then(result => {
-                        if (result.success) {
-                            loadTimeSlots();
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'ลบแล้ว',
-                                customClass: {
-                                    popup: 'font-thai'
-                                }
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'ผิดพลาด',
-                                text: result.message || 'ไม่สามารถลบได้',
-                                customClass: {
-                                    popup: 'font-thai'
-                                }
-                            });
-                        }
-                    }).catch(err => Swal.fire({
-                        icon: 'error',
-                        title: 'ผิดพลาด',
-                        text: `การเชื่อมต่อล้มเหลว: ${err}`,
-                        customClass: {
-                            popup: 'font-thai'
-                        }
-                    }));
-                }
-            });
-        }
-
-
-
-        function addHoliday() {
-            const date = document.getElementById('holidayInput').value;
-            if (!date) return Swal.fire('กรุณาเลือกวันที่', '', 'warning');
-            fetch(CONFIG_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'addHoliday',
-                    date
-                })
-            }).then(() => {
-                loadHolidays();
-                Swal.fire('เพิ่มวันหยุดแล้ว', '', 'success');
-            });
-        }
-
-
-        function loadHolidays() {
-            holidayTableContainer.innerHTML = loadingHTML;
-            const branch = localStorage.getItem('branch') || '1';
-            fetch(`${CONFIG_URL}?action=fetchHolidays&branch=${branch}`).then(r => r.json()).then(data => {
-                let html = `
-          <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50"><tr>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">วันหยุด</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">จัดการ</th>
-            </tr></thead><tbody>`;
-                data.forEach(d => {
-                    html += `<tr class="border-t">
-            <td class="px-3 py-3 whitespace-nowrap text-slate-700 font-medium">${d}</td>
-            <td class="px-3 py-3 whitespace-nowrap">
-              <button onclick="deleteHoliday('${d}')" class="text-red-600 hover:text-red-900 font-thai">ลบ</button>
-            </td>
-          </tr>`;
-                });
-                html += '</tbody></table>';
-                holidayTableContainer.innerHTML = html;
-            });
-        }
-
-
-        function deleteHoliday(date) {
-            Swal.fire({
-                title: `ลบ ${date}?`,
-                showCancelButton: true
-            }).then(res => {
-                if (res.isConfirmed) {
-                    const branch = localStorage.getItem('branch') || '1';
-                    fetch(CONFIG_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'deleteHoliday',
-                            date,
-                            branch: branch
-                        })
-                    }).then(() => {
-                        loadHolidays();
-                        Swal.fire('ลบแล้ว', '', 'success');
-                    });
-                }
-            });
-        }
-
-// ฟังก์ชันสำหรับโหลดค่าวันหยุดที่ตั้งไว้มาแสดงใน Checkbox
-async function loadPermanentHolidays() {
-    try {
-        const branch = localStorage.getItem('branch') || '1';
-        const response = await fetch(`${CONFIG_URL}?action=fetchGeneralSettings&branch=${branch}`);
-        if (!response.ok) throw new Error('Network response was not ok.');
-        const data = await response.json();
-        const holidayString = data.permanentHolidays || '';
-        const savedDays = holidayString.split(',').filter(d => d.trim() !== '');
-        document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-            checkbox.checked = savedDays.includes(checkbox.value);
-        });
-    } catch (error) {
-        console.error('Error loading permanent holidays:', error);
-        Swal.fire({icon: 'error', title: 'ผิดพลาด!', text: 'ไม่สามารถโหลดการตั้งค่าวันหยุดประจำได้', customClass: { popup: 'font-thai' }});
-    }
-}
-
-// ฟังก์ชันสำหรับบันทึกค่าใหม่
-async function savePermanentHolidays() {
-    const selectedDays = [];
-    document.querySelectorAll('.day-checkbox:checked').forEach(checkbox => {
-        selectedDays.push(checkbox.value);
+      document.getElementById('saveWeeklyWorkdaysBtn').addEventListener('click', saveWeeklyWorkdays);
     });
-    Swal.fire({
-        title: 'กำลังบันทึก...',
-        text: 'กรุณารอสักครู่',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-        customClass: { popup: 'font-thai' }
-    });
-    try {
-        const branch = localStorage.getItem('branch') || '1';
-        const response = await fetch(CONFIG_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'updatePermanentHolidays',
-                data: selectedDays,
-                branch: branch
-            })
-        });
-        const result = await response.json();
-        if (result.success) {
-            Swal.fire({icon: 'success', title: 'สำเร็จ!', text: result.message, customClass: { popup: 'font-thai' }});
-        } else {
-            throw new Error(result.message || 'ไม่สามารถบันทึกข้อมูลได้');
-        }
-    } catch (error) {
-        console.error('Error saving permanent holidays:', error);
-        Swal.fire({icon: 'error', title: 'ผิดพลาด!', text: error.message, customClass: { popup: 'font-thai' }});
-    }
-}
-        // Initial Load
+
+    document.getElementById('timeSlotForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('ts-id').value.trim();
+      const time = document.getElementById('ts-time').value;
+      const slots = document.getElementById('ts-slots').value;
+      if (!time || !slots) return showErr('กรุณากรอกข้อมูลให้ครบ');
+
+      try {
+        const data = {
+          branch: branch(),
+          'ไอดี': id,
+          'ช่วงเวลา': time,
+          'สลอต': slots,
+          'à¹„à¸­à¸”à¸µ': id,
+          'à¸Šà¹ˆà¸§à¸‡à¹€à¸§à¸¥à¸²': time,
+          'à¸ªà¸¥à¸­à¸•': slots
+        };
+        const result = await postJson({ action: 'insertOrUpdateTimeSlot', data });
+        if (!result.success && !result.id) throw new Error(result.message || 'ไม่สามารถบันทึกได้');
+        Swal.fire({ icon: 'success', title: 'สำเร็จ', text: 'บันทึกช่วงเวลาเรียบร้อย', customClass: { popup: 'font-thai' } });
+        hideTimeSlotForm();
         loadTimeSlots();
-        loadHolidays();
-        loadPermanentHolidays(); 
+      } catch (err) {
+        showErr(err.message || String(err));
+      }
+    });
+
+    document.getElementById('doctorForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('doc-id').value.trim();
+      const name = document.getElementById('doc-name').value.trim();
+      if (!name) return showErr('กรุณากรอกชื่อหมอ');
+
+      try {
+        const data = {
+          branch: branch(),
+          'ไอดี': id,
+          'รายชื่อหมอ': name,
+          'à¹„à¸­à¸”à¸µ': id,
+          'à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¸«à¸¡à¸­': name
+        };
+        const result = await postJson({ action: 'insertOrUpdateDoctor', data });
+        if (!result.success && !result.id) throw new Error(result.message || 'ไม่สามารถบันทึกได้');
+        Swal.fire({ icon: 'success', title: 'สำเร็จ', text: 'บันทึกรายชื่อหมอเรียบร้อย', customClass: { popup: 'font-thai' } });
+        hideDoctorForm();
         loadDoctors();
+      } catch (err) {
+        showErr(err.message || String(err));
+      }
+    });
 
-        // เมื่อปุ่มบันทึกวันหยุดประจำถูกคลิก
-        document.getElementById('saveHolidaysBtn').addEventListener('click', savePermanentHolidays); 
-
-        // --- Doctor Names Management ---
-        function showDoctorForm(isEdit = false) {
-            document.getElementById('doctorFormSection').classList.remove('hidden');
-            if (!isEdit) {
-                document.getElementById('doctorForm').reset();
-                document.getElementById('doc-id').value = '';
-            }
-            document.getElementById('doctorFormSection').scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
+    async function loadTimeSlots() {
+      timeSlotTableContainer.innerHTML = loadingHTML;
+      try {
+        const data = await getJson(`${CONFIG_URL}?action=fetchTimeSlots&branch=${encodeURIComponent(branch())}`);
+        const rows = Array.isArray(data) ? data.map(normalizeTimeSlot) : [];
+        let html = `<table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50"><tr><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ไอดี</th><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ช่วงเวลา</th><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">สล็อต</th><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ลบ</th></tr></thead><tbody class="bg-white divide-y divide-slate-200">`;
+        if (rows.length === 0) {
+          html += `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500 font-thai">ยังไม่มีข้อมูล</td></tr>`;
+        } else {
+          rows.forEach((r) => {
+            html += `<tr class="hover:bg-slate-50"><td class="px-3 py-3">${r.id}</td><td class="px-3 py-3">${r.time}</td><td class="px-3 py-3">${r.slots}</td><td class="px-3 py-3"><button onclick="editTimeSlot('${r.id.replace(/'/g, "\\'")}','${r.time}','${r.slots}')" class="text-green-600 hover:text-green-900 mr-2 font-thai">แก้ไข</button><button onclick="deleteTimeSlot('${r.id.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900 font-thai">ลบ</button></td></tr>`;
+          });
         }
+        html += '</tbody></table>';
+        timeSlotTableContainer.innerHTML = html;
+      } catch (err) {
+        timeSlotTableContainer.innerHTML = `<p class="p-3 text-red-500 font-thai">โหลดข้อมูลไม่สำเร็จ: ${err.message || err}</p>`;
+      }
+    }
 
-        function hideDoctorForm() {
-            document.getElementById('doctorFormSection').classList.add('hidden');
-            document.getElementById('doctorForm').reset();
+    function editTimeSlot(id, time, slots) {
+      document.getElementById('ts-id').value = id;
+      document.getElementById('ts-time').value = time;
+      document.getElementById('ts-slots').value = slots;
+      showTimeSlotForm(true);
+    }
+
+    async function deleteTimeSlot(id) {
+      const ok = await Swal.fire({ title: `ลบช่วงเวลา ${id}?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', customClass: { popup: 'font-thai' } });
+      if (!ok.isConfirmed) return;
+      try {
+        const result = await postJson({ action: 'deleteTimeSlot', id, branch: branch() });
+        if (!result.success) throw new Error(result.message || 'ลบไม่สำเร็จ');
+        loadTimeSlots();
+      } catch (err) {
+        showErr(err.message || String(err));
+      }
+    }
+
+    async function addWorkday() {
+      const date = document.getElementById('holidayInput').value;
+      if (!date) return showErr('กรุณาเลือกวันที่');
+      try {
+        const result = await postJson({ action: 'addWorkday', date, branch: branch() });
+        if (!result.success) throw new Error(result.message || 'เพิ่มไม่สำเร็จ');
+        loadWorkdays();
+      } catch (err) {
+        showErr(err.message || String(err));
+      }
+    }
+
+    async function loadWorkdays() {
+      holidayTableContainer.innerHTML = loadingHTML;
+      try {
+        const data = await getJson(`${CONFIG_URL}?action=fetchWorkdays&branch=${encodeURIComponent(branch())}`);
+        const rows = Array.isArray(data) ? data : [];
+        let html = `<table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50"><tr><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">วันทำงานพิเศษ</th><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ลบ</th></tr></thead><tbody class="bg-white divide-y divide-slate-200">`;
+        if (!rows.length) {
+          html += `<tr><td colspan="2" class="px-3 py-3 text-center text-slate-500 font-thai">ยังไม่มีข้อมูล</td></tr>`;
+        } else {
+          rows.forEach((d) => {
+            html += `<tr><td class="px-3 py-3">${d}</td><td class="px-3 py-3"><button onclick="deleteWorkday('${String(d).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900 font-thai">ลบ</button></td></tr>`;
+          });
         }
+        html += '</tbody></table>';
+        holidayTableContainer.innerHTML = html;
+      } catch (err) {
+        holidayTableContainer.innerHTML = `<p class="p-3 text-red-500 font-thai">โหลดข้อมูลไม่สำเร็จ: ${err.message || err}</p>`;
+      }
+    }
 
-        document.getElementById('doctorForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const data = {};
-            new FormData(this).forEach((value, key) => data[key] = value);
-            Swal.fire({
-                title: 'กำลังบันทึก...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading(),
-                customClass: {
-                    popup: 'font-thai'
-                }
-            });
-            fetch(CONFIG_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'insertOrUpdateDoctor',
-                    data
-                })
-            }).then(r => r.json()).then(result => {
-                if (result.success || result.id) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'สำเร็จ',
-                        text: 'บันทึกข้อมูลหมอเรียบร้อย',
-                        customClass: {
-                            popup: 'font-thai'
-                        }
-                    });
-                    this.reset();
-                    hideDoctorForm();
-                    loadDoctors();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ผิดพลาด',
-                        text: result.message || 'ไม่สามารถบันทึกได้',
-                        customClass: {
-                            popup: 'font-thai'
-                        }
-                    });
-                }
-            }).catch(err => Swal.fire({
-                icon: 'error',
-                title: 'ผิดพลาด',
-                text: `การเชื่อมต่อล้มเหลว: ${err}`,
-                customClass: {
-                    popup: 'font-thai'
-                }
-            }));
-        });
+    async function deleteWorkday(date) {
+      const ok = await Swal.fire({ title: `ลบวันที่ ${date}?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', customClass: { popup: 'font-thai' } });
+      if (!ok.isConfirmed) return;
+      try {
+        const result = await postJson({ action: 'deleteWorkday', date, branch: branch() });
+        if (!result.success) throw new Error(result.message || 'ลบไม่สำเร็จ');
+        loadWorkdays();
+      } catch (err) {
+        showErr(err.message || String(err));
+      }
+    }
 
-        function loadDoctors() {
-            doctorTableContainer.innerHTML = loadingHTML;
-            fetch(`${CONFIG_URL}?action=fetchDoctors`)
-                .then(r => {
-                    if (!r.ok) throw new Error('Network response failed');
-                    return r.json()
-                })
-                .then(data => {
-                    let html = `
-          <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50"><tr>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ไอดี</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ชื่อหมอ</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">จัดการ</th>
-            </tr></thead><tbody class="bg-white divide-y divide-slate-200">`;
-                    if (data.length === 0) {
-                        html += `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500 font-thai">ยังไม่มีข้อมูลหมอ</td></tr>`;
-                    } else {
-                        data.forEach(d => {
-                            html += `<tr class="hover:bg-slate-50">
-                <td class="px-3 py-3 whitespace-nowrap text-slate-600 font-mono text-xs">${d['ไอดี']}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-slate-700 font-medium">${d['รายชื่อหมอ']}</td>
-                <td class="px-3 py-3 whitespace-nowrap">
-                <button onclick="editDoctor('${d['ไอดี']}')" class="text-green-600 hover:text-green-900 mr-2 font-thai">แก้ไข</button>
-                <button onclick="deleteDoctor('${d['ไอดี']}')" class="text-red-600 hover:text-red-900 font-thai">ลบ</button>
-                </td>
-            </tr>`;
-                        });
-                    }
-                    html += '</tbody></table>';
-                    doctorTableContainer.innerHTML = html;
-                }).catch(err => {
-                    doctorTableContainer.innerHTML = `<p class="p-3 text-red-500 font-thai">โหลดข้อมูลหมอล้มเหลว: ${err.message}</p>`;
-                });
+    async function loadWeeklyWorkdays() {
+      try {
+        const data = await getJson(`${CONFIG_URL}?action=fetchGeneralSettings&branch=${encodeURIComponent(branch())}`);
+        const raw = String(data.permanentHolidays || data.weeklyWorkdays || '');
+        const values = raw.split(',').map((d) => d.trim()).filter(Boolean);
+        document.querySelectorAll('.day-checkbox').forEach((cb) => cb.checked = values.includes(cb.value));
+      } catch (err) {
+        showErr('โหลดวันทำงานประจำไม่สำเร็จ');
+      }
+    }
+
+    async function saveWeeklyWorkdays() {
+      const values = [];
+      document.querySelectorAll('.day-checkbox:checked').forEach((cb) => values.push(cb.value));
+      try {
+        const result = await postJson({ action: 'updateWeeklyWorkdays', data: values, branch: branch() });
+        if (!result.success) throw new Error(result.message || 'บันทึกไม่สำเร็จ');
+        Swal.fire({ icon: 'success', title: 'บันทึกแล้ว', customClass: { popup: 'font-thai' } });
+      } catch (err) {
+        showErr(err.message || String(err));
+      }
+    }
+
+    async function loadDoctors() {
+      doctorTableContainer.innerHTML = loadingHTML;
+      try {
+        const data = await getJson(`${CONFIG_URL}?action=fetchDoctors&branch=${encodeURIComponent(branch())}`);
+        const rows = Array.isArray(data) ? data.map(normalizeDoctor) : [];
+        let html = `<table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50"><tr><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ไอดี</th><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">ชื่อหมอ</th><th class="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-thai">จัดการ</th></tr></thead><tbody class="bg-white divide-y divide-slate-200">`;
+        if (!rows.length) {
+          html += `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500 font-thai">ยังไม่มีข้อมูล</td></tr>`;
+        } else {
+          rows.forEach((r) => {
+            html += `<tr><td class="px-3 py-3">${r.id}</td><td class="px-3 py-3">${r.name}</td><td class="px-3 py-3"><button onclick="editDoctor('${r.id.replace(/'/g, "\\'")}','${r.name.replace(/'/g, "\\'")}')" class="text-green-600 hover:text-green-900 mr-2 font-thai">แก้ไข</button><button onclick="deleteDoctor('${r.id.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900 font-thai">ลบ</button></td></tr>`;
+          });
         }
+        html += '</tbody></table>';
+        doctorTableContainer.innerHTML = html;
+      } catch (err) {
+        doctorTableContainer.innerHTML = `<p class="p-3 text-red-500 font-thai">โหลดข้อมูลไม่สำเร็จ: ${err.message || err}</p>`;
+      }
+    }
 
-        function editDoctor(id) {
-            fetch(`${CONFIG_URL}?action=fetchDoctors`).then(r => r.json()).then(data => {
-                const d = data.find(x => x['ไอดี'] === id);
-                if (!d) return Swal.fire({
-                    icon: 'warning',
-                    title: 'ไม่พบข้อมูล',
-                    customClass: {
-                        popup: 'font-thai'
-                    }
-                });
-                const form = document.getElementById('doctorForm');
-                form.elements['ไอดี'].value = d['ไอดี'];
-                form.elements['รายชื่อหมอ'].value = d['รายชื่อหมอ'];
-                showDoctorForm(true);
-            });
-        }
+    function editDoctor(id, name) {
+      document.getElementById('doc-id').value = id;
+      document.getElementById('doc-name').value = name;
+      showDoctorForm(true);
+    }
 
-        function deleteDoctor(id) {
-            Swal.fire({
-                title: 'ลบหมอคนนี้?',
-                text: `ต้องการลบหมอไอดี: ${id}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'ใช่, ลบเลย',
-                cancelButtonText: 'ยกเลิก',
-                customClass: {
-                    popup: 'font-thai'
-                }
-            }).then(res => {
-                if (res.isConfirmed) {
-                    fetch(CONFIG_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'deleteDoctor',
-                            id
-                        })
-                    }).then(r => r.json()).then(result => {
-                        if (result.success) {
-                            loadDoctors();
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'ลบแล้ว',
-                                customClass: {
-                                    popup: 'font-thai'
-                                }
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'ผิดพลาด',
-                                text: result.message || 'ไม่สามารถลบได้',
-                                customClass: {
-                                    popup: 'font-thai'
-                                }
-                            });
-                        }
-                    }).catch(err => Swal.fire({
-                        icon: 'error',
-                        title: 'ผิดพลาด',
-                        text: `การเชื่อมต่าล้มเหลว: ${err}`,
-                        customClass: {
-                            popup: 'font-thai'
-                        }
-                    }));
-                }
-            });
+    async function deleteDoctor(id) {
+      const ok = await Swal.fire({ title: `ลบหมอ ${id}?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', customClass: { popup: 'font-thai' } });
+      if (!ok.isConfirmed) return;
+      try {
+        const result = await postJson({ action: 'deleteDoctor', id, branch: branch() });
+        if (!result.success) throw new Error(result.message || 'ลบไม่สำเร็จ');
+        loadDoctors();
+      } catch (err) {
+        showErr(err.message || String(err));
+      }
+    }
+
+    let autoCheckInterval = null;
+
+    async function loadBotStatus() {
+      try {
+        const data = await getJson(`${CONFIG_URL}?action=fetchBotStatus`);
+        if (!data.success) return;
+        const status = String(data.status).toUpperCase() === 'TRUE' ? 'TRUE' : 'FALSE';
+        document.getElementById('botStatusLabel').textContent = status;
+        document.getElementById('botStatusLabel').className = `font-semibold ${status === 'TRUE' ? 'text-green-600' : 'text-red-600'}`;
+        document.getElementById('botLastedExecute').textContent = data.lastedExecute || '-';
+        document.getElementById('botStage').textContent = data.stage || '-';
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function stopAutoCheck() {
+      if (autoCheckInterval) clearInterval(autoCheckInterval);
+      autoCheckInterval = null;
+      document.getElementById('autoCheckIndicator').classList.add('hidden');
+    }
+
+    function startAutoCheck() {
+      stopAutoCheck();
+      document.getElementById('autoCheckIndicator').classList.remove('hidden');
+      let checks = 0;
+      autoCheckInterval = setInterval(async () => {
+        checks += 1;
+        try {
+          const data = await getJson(`${CONFIG_URL}?action=fetchBotStatus`);
+          loadBotStatus();
+          const done = data.stage === 'done' && String(data.status).toUpperCase() === 'FALSE';
+          if (done || checks >= 40) stopAutoCheck();
+        } catch (err) {
+          console.error(err);
         }
-    </script>
+      }, 3000);
+    }
+
+    async function updateBotStatus() {
+      const btn = document.getElementById('updateBotBtn');
+      btn.disabled = true;
+      btn.textContent = 'กำลังอัปเดต...';
+      try {
+        const result = await postJson({ action: 'updateBotStatus' });
+        if (!result.success) throw new Error(result.message || 'อัปเดตไม่สำเร็จ');
+        btn.disabled = false;
+        btn.textContent = 'อัปเดตข้อมูล';
+        loadBotStatus();
+        startAutoCheck();
+        Swal.fire({ icon: 'success', title: 'เริ่มกระบวนการแล้ว', text: result.message || '', customClass: { popup: 'font-thai' } });
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'อัปเดตข้อมูล';
+        showErr(err.message || String(err));
+      }
+    }
+  </script>
 </body>
 
 </html>
-

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Me-smile</title>
+    <title>Me-smile | Booking</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js" defer></script>
@@ -641,9 +641,9 @@
                     class="w-10 h-10 object-contain rounded-md" />
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 mt-4">
+        <div class="grid grid-cols-1 gap-2 mt-4">
             <button id="bookingTab" type="button" class="tab-toggle active" data-translate-key="tab.booking"></button>
-            <button id="historyTab" type="button" class="tab-toggle" data-translate-key="tab.history"></button>
+            <button id="historyTab" type="button" class="tab-toggle hidden" data-translate-key="tab.history"></button>
         </div>
 
         <section id="bookingSection" class="mt-4">
@@ -1670,8 +1670,10 @@
         };
         $('backToStep3').onclick = () => navigateToStep('step3');
 
-        $('bookingTab').onclick = () => switchView('booking');
-        $('historyTab').onclick = () => switchView('history');
+        const bookingTabEl = $('bookingTab');
+        if (bookingTabEl) bookingTabEl.onclick = () => switchView('booking');
+        const historyTabEl = $('historyTab');
+        if (historyTabEl) historyTabEl.onclick = () => switchView('history');
 
         ['statusFilter', 'dateSort'].forEach(id => {
             const el = $(id);

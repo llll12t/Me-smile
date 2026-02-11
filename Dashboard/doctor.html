@@ -8,10 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700&display=swap" rel="stylesheet" />
     <style>
-        body {
-            font-family: 'Noto Sans Thai', sans-serif;
+       body {
+            font-family: 'Inter', sans-serif;
+            /* Default font */
         }
-
+ 
         .spinner {
             width: 3rem;
             height: 3rem;
@@ -140,8 +141,7 @@
         <main class="flex-1 flex flex-col">
             <header class="bg-white border-b border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800">จัดการข้อมูลหมอ</h2>
-                    <p class="text-sm text-slate-500">เพิ่ม แก้ไข และลบข้อมูลหมอที่ทำงานแต่ละวัน</p>
+                    <h2 class="text-xl font-bold text-slate-800">จัดการข้อมูลหมอ</h2>
                 </div>
             </header>
 
@@ -168,6 +168,7 @@
                                     <th class="p-3 text-left">หมอ 1</th>
                                     <th class="p-3 text-left">หมอ 2</th>
                                     <th class="p-3 text-left">หมอ 3</th>
+                                    <th class="p-3 text-left">หมอ 4</th>
                                     <th class="p-3 text-center">จัดการ</th>
                                 </tr>
                             </thead>
@@ -183,10 +184,10 @@
 
     <!-- Branch Selector -->
     <div style="position:fixed;top:10px;right:20px;z-index:1000;">
-      <label for="branchSelector" style="font-weight:bold;margin-right:8px;">เลือกสาขา:</label>
+      <label for="branchSelector" style="font-weight:bold;margin-right:8px;">โรงงาน :</label>
       <select id="branchSelector" style="padding:4px 8px;border-radius:6px;">
-        <option value="1">สาขา 1</option>
-        <option value="2">สาขา 2</option>
+        <option value="1">CPF มีนบุรี 1</option>
+        <option value="2">CPF มีนบุรี 2</option>
       </select>
     </div>
 
@@ -220,6 +221,12 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">หมอ 3</label>
                     <select id="doctor3" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="">-- เลือกหมอ --</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">หมอ 4</label>
+                    <select id="doctor4" class="w-full border border-gray-300 rounded px-3 py-2">
                         <option value="">-- เลือกหมอ --</option>
                     </select>
                 </div>
@@ -335,7 +342,7 @@
 
         // ฟังก์ชันเติมข้อมูลใน dropdown
         function populateDoctorDropdowns() {
-            const dropdowns = ['doctor1', 'doctor2', 'doctor3'];
+            const dropdowns = ['doctor1', 'doctor2', 'doctor3', 'doctor4'];
             
             dropdowns.forEach(dropdownId => {
                 const dropdown = document.getElementById(dropdownId);
@@ -384,6 +391,7 @@
             formData.append('doctor1', document.getElementById('doctor1').value);
             formData.append('doctor2', document.getElementById('doctor2').value);
             formData.append('doctor3', document.getElementById('doctor3').value);
+            formData.append('doctor4', document.getElementById('doctor4').value);
             const branch = localStorage.getItem('branch') || '1';
             formData.append('branch', branch);
 
@@ -438,6 +446,7 @@
                             <td class="p-3">${item.doctor1 || '-'}</td>
                             <td class="p-3">${item.doctor2 || '-'}</td>
                             <td class="p-3">${item.doctor3 || '-'}</td>
+                            <td class="p-3">${item.doctor4 || '-'}</td>
                             <td class="p-3 text-center">
                                 <button onclick="editDoctor('${item.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs mr-2">แก้ไข</button>
                                 <button onclick="deleteDoctor('${item.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">ลบ</button>
@@ -486,6 +495,7 @@
                 document.getElementById('doctor1').value = data.doctor1 || '';
                 document.getElementById('doctor2').value = data.doctor2 || '';
                 document.getElementById('doctor3').value = data.doctor3 || '';
+                document.getElementById('doctor4').value = data.doctor4 || '';
 
                 doctorModal.classList.remove('hidden');
                 doctorModal.classList.add('flex');
